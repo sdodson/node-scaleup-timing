@@ -1,0 +1,97 @@
+{
+  "apiVersion": "machine.openshift.io/v1beta1",
+  "kind": "MachineSet",
+  "metadata": {
+    "annotations": {
+      "capacity.cluster-autoscaler.kubernetes.io/labels": "kubernetes.io/arch=amd64",
+      "machine.openshift.io/GPU": "0",
+      "machine.openshift.io/memoryMb": "16384",
+      "machine.openshift.io/vCPU": "4"
+    },
+    "labels": {
+      "machine.openshift.io/cluster-api-cluster": "ci-ln-wy83gzk-1d09d-m9g8v",
+      "machine.openshift.io/cluster-api-machine-role": "worker",
+      "machine.openshift.io/cluster-api-machine-type": "worker"
+    },
+    "name": "ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v5",
+    "namespace": "openshift-machine-api"
+  },
+  "spec": {
+    "replicas": 0,
+    "selector": {
+      "matchLabels": {
+        "machine.openshift.io/cluster-api-cluster": "ci-ln-wy83gzk-1d09d-m9g8v",
+        "machine.openshift.io/cluster-api-machineset": "ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v5"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "machine.openshift.io/cluster-api-cluster": "ci-ln-wy83gzk-1d09d-m9g8v",
+          "machine.openshift.io/cluster-api-machine-role": "worker",
+          "machine.openshift.io/cluster-api-machine-type": "worker",
+          "machine.openshift.io/cluster-api-machineset": "ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v5"
+        }
+      },
+      "spec": {
+        "lifecycleHooks": {},
+        "metadata": {},
+        "providerSpec": {
+          "value": {
+            "acceleratedNetworking": true,
+            "apiVersion": "machine.openshift.io/v1beta1",
+            "credentialsSecret": {
+              "name": "azure-cloud-credentials",
+              "namespace": "openshift-machine-api"
+            },
+            "diagnostics": {
+              "boot": {
+                "storageAccountType": "AzureManaged"
+              }
+            },
+            "image": {
+              "offer": "",
+              "publisher": "",
+              "resourceID": "/resourceGroups/ci-ln-wy83gzk-1d09d-m9g8v-rg/providers/Microsoft.Compute/galleries/gallery_ci_ln_wy83gzk_1d09d_m9g8v/images/ci-ln-wy83gzk-1d09d-m9g8v-gen2/versions/latest",
+              "sku": "",
+              "version": ""
+            },
+            "kind": "AzureMachineProviderSpec",
+            "location": "westus",
+            "managedIdentity": "ci-ln-wy83gzk-1d09d-m9g8v-identity",
+            "metadata": {
+              "creationTimestamp": null
+            },
+            "networkResourceGroup": "ci-ln-wy83gzk-1d09d-m9g8v-rg",
+            "osDisk": {
+              "diskSettings": {},
+              "diskSizeGB": 128,
+              "managedDisk": {
+                "securityProfile": {
+                  "diskEncryptionSet": {}
+                },
+                "storageAccountType": "Premium_LRS"
+              },
+              "osType": "Linux"
+            },
+            "publicIP": false,
+            "publicLoadBalancer": "ci-ln-wy83gzk-1d09d-m9g8v",
+            "resourceGroup": "ci-ln-wy83gzk-1d09d-m9g8v-rg",
+            "securityProfile": {
+              "settings": {}
+            },
+            "subnet": "ci-ln-wy83gzk-1d09d-m9g8v-worker-subnet",
+            "tags": {
+              "expiration_date": "2026-04-18T04:33+00:00"
+            },
+            "userDataSecret": {
+              "name": "worker-user-data"
+            },
+            "vmSize": "Standard_D4s_v5",
+            "vnet": "ci-ln-wy83gzk-1d09d-m9g8v-vnet"
+          }
+        }
+      }
+    }
+  }
+}

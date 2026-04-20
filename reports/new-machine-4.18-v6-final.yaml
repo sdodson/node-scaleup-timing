@@ -1,0 +1,110 @@
+apiVersion: machine.openshift.io/v1beta1
+kind: Machine
+metadata:
+  annotations:
+    machine.openshift.io/instance-state: Running
+  creationTimestamp: "2026-04-17T23:13:00Z"
+  finalizers:
+  - machine.machine.openshift.io
+  generateName: ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v6-
+  generation: 2
+  labels:
+    machine.openshift.io/cluster-api-cluster: ci-ln-wy83gzk-1d09d-m9g8v
+    machine.openshift.io/cluster-api-machine-role: worker
+    machine.openshift.io/cluster-api-machine-type: worker
+    machine.openshift.io/cluster-api-machineset: ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v6
+    machine.openshift.io/instance-type: Standard_D4s_v6
+    machine.openshift.io/region: westus
+  name: ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v6-ct55k
+  namespace: openshift-machine-api
+  ownerReferences:
+  - apiVersion: machine.openshift.io/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: MachineSet
+    name: ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v6
+    uid: cec38a6f-f0bd-48fe-83cf-ffaaa77402a4
+  resourceVersion: "62313"
+  uid: 3d0874a3-bf02-4484-90a1-401a40d93c1c
+spec:
+  lifecycleHooks: {}
+  metadata: {}
+  providerID: azure:///subscriptions/72e3a972-58b0-4afc-bd4f-da89b39ccebd/resourceGroups/ci-ln-wy83gzk-1d09d-m9g8v-rg/providers/Microsoft.Compute/virtualMachines/ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v6-ct55k
+  providerSpec:
+    value:
+      acceleratedNetworking: true
+      apiVersion: machine.openshift.io/v1beta1
+      credentialsSecret:
+        name: azure-cloud-credentials
+        namespace: openshift-machine-api
+      diagnostics:
+        boot:
+          storageAccountType: AzureManaged
+      image:
+        offer: ""
+        publisher: ""
+        resourceID: /resourceGroups/ci-ln-wy83gzk-1d09d-m9g8v-rg/providers/Microsoft.Compute/galleries/gallery_ci_ln_wy83gzk_1d09d_m9g8v/images/ci-ln-wy83gzk-1d09d-m9g8v-gen2/versions/latest
+        sku: ""
+        version: ""
+      kind: AzureMachineProviderSpec
+      location: westus
+      managedIdentity: ci-ln-wy83gzk-1d09d-m9g8v-identity
+      metadata:
+        creationTimestamp: null
+      networkResourceGroup: ci-ln-wy83gzk-1d09d-m9g8v-rg
+      osDisk:
+        diskSettings: {}
+        diskSizeGB: 128
+        managedDisk:
+          securityProfile:
+            diskEncryptionSet: {}
+          storageAccountType: Premium_LRS
+        osType: Linux
+      publicIP: false
+      publicLoadBalancer: ci-ln-wy83gzk-1d09d-m9g8v
+      resourceGroup: ci-ln-wy83gzk-1d09d-m9g8v-rg
+      securityProfile:
+        settings: {}
+      subnet: ci-ln-wy83gzk-1d09d-m9g8v-worker-subnet
+      tags:
+        expiration_date: 2026-04-18T04:33+00:00
+      userDataSecret:
+        name: worker-user-data
+      vmSize: Standard_D4s_v6
+      vnet: ci-ln-wy83gzk-1d09d-m9g8v-vnet
+status:
+  addresses:
+  - address: ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v6-ct55k
+    type: Hostname
+  - address: ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v6-ct55k
+    type: InternalDNS
+  - address: ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v6-ct55k.gvquxfmjinwupnjky3ja3qj0qh.dx.internal.cloudapp.net
+    type: InternalDNS
+  - address: 10.0.128.7
+    type: InternalIP
+  conditions:
+  - lastTransitionTime: "2026-04-17T23:13:01Z"
+    status: "True"
+    type: Drainable
+  - lastTransitionTime: "2026-04-17T23:13:11Z"
+    status: "True"
+    type: InstanceExists
+  - lastTransitionTime: "2026-04-17T23:13:01Z"
+    status: "True"
+    type: Terminable
+  lastUpdated: "2026-04-17T23:17:15Z"
+  nodeRef:
+    kind: Node
+    name: ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v6-ct55k
+    uid: 43d5e7c0-7598-4570-9877-0772d546fe93
+  phase: Running
+  providerStatus:
+    conditions:
+    - lastTransitionTime: "2026-04-17T23:13:09Z"
+      message: machine successfully created
+      reason: MachineCreationSucceeded
+      status: "True"
+      type: MachineCreated
+    metadata: {}
+    vmId: /subscriptions/72e3a972-58b0-4afc-bd4f-da89b39ccebd/resourceGroups/ci-ln-wy83gzk-1d09d-m9g8v-rg/providers/Microsoft.Compute/virtualMachines/ci-ln-wy83gzk-1d09d-m9g8v-worker-westus-v6-ct55k
+    vmState: Running

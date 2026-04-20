@@ -1,0 +1,99 @@
+{
+  "apiVersion": "machine.openshift.io/v1beta1",
+  "kind": "MachineSet",
+  "metadata": {
+    "annotations": {
+      "capacity.cluster-autoscaler.kubernetes.io/labels": "kubernetes.io/arch=amd64",
+      "machine.openshift.io/GPU": "0",
+      "machine.openshift.io/memoryMb": "16384",
+      "machine.openshift.io/vCPU": "4"
+    },
+    "labels": {
+      "machine.openshift.io/cluster-api-cluster": "ci-ln-rm0x8pk-1d09d-vkpbd",
+      "machine.openshift.io/cluster-api-machine-role": "worker",
+      "machine.openshift.io/cluster-api-machine-type": "worker"
+    },
+    "name": "ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-v5",
+    "namespace": "openshift-machine-api"
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "machine.openshift.io/cluster-api-cluster": "ci-ln-rm0x8pk-1d09d-vkpbd",
+        "machine.openshift.io/cluster-api-machineset": "ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-v5"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "machine.openshift.io/cluster-api-cluster": "ci-ln-rm0x8pk-1d09d-vkpbd",
+          "machine.openshift.io/cluster-api-machine-role": "worker",
+          "machine.openshift.io/cluster-api-machine-type": "worker",
+          "machine.openshift.io/cluster-api-machineset": "ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-v5"
+        }
+      },
+      "spec": {
+        "lifecycleHooks": {},
+        "metadata": {},
+        "providerSpec": {
+          "value": {
+            "acceleratedNetworking": true,
+            "apiVersion": "machine.openshift.io/v1beta1",
+            "credentialsSecret": {
+              "name": "azure-cloud-credentials",
+              "namespace": "openshift-machine-api"
+            },
+            "diagnostics": {
+              "boot": {
+                "storageAccountType": "AzureManaged"
+              }
+            },
+            "image": {
+              "offer": "aro4",
+              "publisher": "azureopenshift",
+              "resourceID": "",
+              "sku": "420-v2",
+              "type": "MarketplaceNoPlan",
+              "version": "9.6.20251015"
+            },
+            "kind": "AzureMachineProviderSpec",
+            "location": "eastus2",
+            "managedIdentity": "ci-ln-rm0x8pk-1d09d-vkpbd-identity",
+            "metadata": {},
+            "networkResourceGroup": "ci-ln-rm0x8pk-1d09d-vkpbd-rg",
+            "osDisk": {
+              "diskSettings": {},
+              "diskSizeGB": 128,
+              "managedDisk": {
+                "securityProfile": {
+                  "diskEncryptionSet": {}
+                },
+                "storageAccountType": "Premium_LRS"
+              },
+              "osType": "Linux"
+            },
+            "publicIP": false,
+            "publicLoadBalancer": "ci-ln-rm0x8pk-1d09d-vkpbd",
+            "resourceGroup": "ci-ln-rm0x8pk-1d09d-vkpbd-rg",
+            "securityProfile": {
+              "settings": {
+                "securityType": ""
+              }
+            },
+            "subnet": "ci-ln-rm0x8pk-1d09d-vkpbd-worker-subnet",
+            "tags": {
+              "expiration_date": "2026-04-18T02:31+00:00"
+            },
+            "userDataSecret": {
+              "name": "worker-user-data"
+            },
+            "vmSize": "Standard_D4s_v5",
+            "vnet": "ci-ln-rm0x8pk-1d09d-vkpbd-vnet",
+            "zone": "1"
+          }
+        }
+      }
+    }
+  }
+}

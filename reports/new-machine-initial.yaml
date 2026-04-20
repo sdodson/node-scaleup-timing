@@ -1,0 +1,109 @@
+apiVersion: machine.openshift.io/v1beta1
+kind: Machine
+metadata:
+  annotations:
+    machine.openshift.io/instance-state: Creating
+  creationTimestamp: "2026-04-17T19:34:40Z"
+  finalizers:
+  - machine.machine.openshift.io
+  generateName: ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-
+  generation: 2
+  labels:
+    machine.openshift.io/cluster-api-cluster: ci-ln-rm0x8pk-1d09d-vkpbd
+    machine.openshift.io/cluster-api-machine-role: worker
+    machine.openshift.io/cluster-api-machine-type: worker
+    machine.openshift.io/cluster-api-machineset: ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21
+    machine.openshift.io/instance-type: Standard_D4s_v3
+    machine.openshift.io/region: eastus2
+    machine.openshift.io/zone: "1"
+  name: ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-jdpdv
+  namespace: openshift-machine-api
+  ownerReferences:
+  - apiVersion: machine.openshift.io/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: MachineSet
+    name: ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21
+    uid: 5d21c046-07e1-4cd1-bb4a-6a7cdea60a9f
+  resourceVersion: "38289"
+  uid: 936a1c87-f81e-4243-9d7a-9e0fb7970666
+spec:
+  lifecycleHooks: {}
+  metadata: {}
+  providerID: azure:///subscriptions/72e3a972-58b0-4afc-bd4f-da89b39ccebd/resourceGroups/ci-ln-rm0x8pk-1d09d-vkpbd-rg/providers/Microsoft.Compute/virtualMachines/ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-jdpdv
+  providerSpec:
+    value:
+      acceleratedNetworking: true
+      apiVersion: machine.openshift.io/v1beta1
+      credentialsSecret:
+        name: azure-cloud-credentials
+        namespace: openshift-machine-api
+      diagnostics:
+        boot:
+          storageAccountType: AzureManaged
+      image:
+        offer: aro4
+        publisher: azureopenshift
+        resourceID: ""
+        sku: 420-v2
+        type: MarketplaceNoPlan
+        version: 9.6.20251015
+      kind: AzureMachineProviderSpec
+      location: eastus2
+      managedIdentity: ci-ln-rm0x8pk-1d09d-vkpbd-identity
+      metadata: {}
+      networkResourceGroup: ci-ln-rm0x8pk-1d09d-vkpbd-rg
+      osDisk:
+        diskSettings: {}
+        diskSizeGB: 128
+        managedDisk:
+          securityProfile:
+            diskEncryptionSet: {}
+          storageAccountType: Premium_LRS
+        osType: Linux
+      publicIP: false
+      publicLoadBalancer: ci-ln-rm0x8pk-1d09d-vkpbd
+      resourceGroup: ci-ln-rm0x8pk-1d09d-vkpbd-rg
+      securityProfile:
+        settings:
+          securityType: ""
+      subnet: ci-ln-rm0x8pk-1d09d-vkpbd-worker-subnet
+      tags:
+        expiration_date: 2026-04-18T02:31+00:00
+      userDataSecret:
+        name: worker-user-data
+      vmSize: Standard_D4s_v3
+      vnet: ci-ln-rm0x8pk-1d09d-vkpbd-vnet
+      zone: "1"
+status:
+  addresses:
+  - address: ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-jdpdv
+    type: Hostname
+  - address: ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-jdpdv
+    type: InternalDNS
+  - address: ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-jdpdv.a4nmgroogdsehkih1dtlfw3ujf.cx.internal.cloudapp.net
+    type: InternalDNS
+  - address: 10.0.128.7
+    type: InternalIP
+  conditions:
+  - lastTransitionTime: "2026-04-17T19:34:40Z"
+    status: "True"
+    type: Drainable
+  - lastTransitionTime: "2026-04-17T19:34:47Z"
+    status: "True"
+    type: InstanceExists
+  - lastTransitionTime: "2026-04-17T19:34:40Z"
+    status: "True"
+    type: Terminable
+  lastUpdated: "2026-04-17T19:34:47Z"
+  phase: Provisioned
+  providerStatus:
+    conditions:
+    - lastTransitionTime: "2026-04-17T19:34:46Z"
+      message: machine successfully created
+      reason: MachineCreationSucceeded
+      status: "True"
+      type: MachineCreated
+    metadata: {}
+    vmId: /subscriptions/72e3a972-58b0-4afc-bd4f-da89b39ccebd/resourceGroups/ci-ln-rm0x8pk-1d09d-vkpbd-rg/providers/Microsoft.Compute/virtualMachines/ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-jdpdv
+    vmState: Creating

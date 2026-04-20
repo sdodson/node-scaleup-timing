@@ -1,0 +1,30 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+  name: 99-worker-chrony-wait-skip-reboot
+spec:
+  config:
+    ignition:
+      version: 3.4.0
+    systemd:
+      units:
+        - name: chrony-wait.service
+          dropins:
+            - name: 10-skip-if-previously-synced.conf
+              contents: |
+                # Skip chrony-wait on reboots where the clock was recently synced.
+                #
+                # chrony-wait blocks kubelet startup (~24s on Azure) waiting for NTP
+                # source selection. On a fresh provision (Boot 1) this is necessary,
+                # but after the MCD firstboot reboot (Boot 2) the clock was synced
+                # moments ago and the delay is unnecessary.
+                #
+                # The chrony driftfile (/var/lib/chrony/drift) is written periodically
+                # by chronyd once it has a stable frequency estimate. If the file
+                # exists and was written within the last hour, we know the clock was
+                # recently synced and skip the wait. Otherwise (fresh provision or
+                # long downtime), chrony-wait runs normally.
+                [Service]
+                ExecCondition=/bin/sh -c '! ( [ -f /var/lib/chrony/drift ] && [ "$(( $(date +%%s) - $(stat -c %%Y /var/lib/chrony/drift) ))" -lt 3600 ] )'

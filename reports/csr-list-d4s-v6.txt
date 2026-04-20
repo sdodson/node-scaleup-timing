@@ -1,0 +1,13 @@
+NAME        AGE     SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
+csr-d9vqs   24m     kubernetes.io/kube-apiserver-client           system:node:ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-v5-75rk2              24h                 Approved,Issued
+csr-fhz9f   33m     kubernetes.io/kube-apiserver-client           system:node:ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-jdpdv                 24h                 Approved,Issued
+csr-glxbc   35m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
+csr-kxbnp   33m     kubernetes.io/kube-apiserver-client           system:node:ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-jdpdv                 24h                 Approved,Issued
+csr-ls6fb   89s     kubernetes.io/kube-apiserver-client           system:node:ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-v6-8hct8              24h                 Approved,Issued
+csr-lxdns   2m28s   kubernetes.io/kubelet-serving                 system:node:ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-v6-8hct8              <none>              Approved,Issued
+csr-sqrfq   94s     kubernetes.io/kube-apiserver-client           system:node:ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-v6-8hct8              24h                 Approved,Issued
+csr-t8prz   25m     kubernetes.io/kubelet-serving                 system:node:ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-v5-75rk2              <none>              Approved,Issued
+csr-v85h6   34m     kubernetes.io/kubelet-serving                 system:node:ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-jdpdv                 <none>              Approved,Issued
+csr-wfp7k   25m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
+csr-zkfkl   2m30s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
+csr-zzxlf   24m     kubernetes.io/kube-apiserver-client           system:node:ci-ln-rm0x8pk-1d09d-vkpbd-worker-eastus21-v5-75rk2              24h                 Approved,Issued

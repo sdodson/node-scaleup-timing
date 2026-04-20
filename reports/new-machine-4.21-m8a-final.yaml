@@ -1,0 +1,117 @@
+apiVersion: machine.openshift.io/v1beta1
+kind: Machine
+metadata:
+  annotations:
+    machine.openshift.io/instance-state: running
+  creationTimestamp: "2026-04-18T02:38:33Z"
+  finalizers:
+  - machine.machine.openshift.io
+  generateName: ci-ln-0mi9cpt-76ef8-8g76q-worker-us-west-2a-m8a-
+  generation: 2
+  labels:
+    machine.openshift.io/cluster-api-cluster: ci-ln-0mi9cpt-76ef8-8g76q
+    machine.openshift.io/cluster-api-machine-role: worker
+    machine.openshift.io/cluster-api-machine-type: worker
+    machine.openshift.io/cluster-api-machineset: ci-ln-0mi9cpt-76ef8-8g76q-worker-us-west-2a-m8a
+    machine.openshift.io/instance-type: m8a.xlarge
+    machine.openshift.io/region: us-west-2
+    machine.openshift.io/zone: us-west-2a
+  name: ci-ln-0mi9cpt-76ef8-8g76q-worker-us-west-2a-m8a-lxzns
+  namespace: openshift-machine-api
+  ownerReferences:
+  - apiVersion: machine.openshift.io/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: MachineSet
+    name: ci-ln-0mi9cpt-76ef8-8g76q-worker-us-west-2a-m8a
+    uid: 2eb17de4-b8c7-4acc-b16e-d306700d5c97
+  resourceVersion: "39888"
+  uid: ea95ac4a-adbd-436a-af3a-7fc68d993052
+spec:
+  lifecycleHooks: {}
+  metadata: {}
+  providerID: aws:///us-west-2a/i-07fd1a10684a47016
+  providerSpec:
+    value:
+      ami:
+        id: ami-04941543f3e575579
+      apiVersion: machine.openshift.io/v1beta1
+      blockDevices:
+      - ebs:
+          encrypted: true
+          iops: 0
+          kmsKey:
+            arn: ""
+          volumeSize: 120
+          volumeType: gp3
+      capacityReservationId: ""
+      credentialsSecret:
+        name: aws-cloud-credentials
+      deviceIndex: 0
+      iamInstanceProfile:
+        id: ci-ln-0mi9cpt-76ef8-8g76q-worker-profile
+      instanceType: m8a.xlarge
+      kind: AWSMachineProviderConfig
+      metadata: {}
+      metadataServiceOptions: {}
+      placement:
+        availabilityZone: us-west-2a
+        region: us-west-2
+      securityGroups:
+      - filters:
+        - name: tag:Name
+          values:
+          - ci-ln-0mi9cpt-76ef8-8g76q-node
+      - filters:
+        - name: tag:Name
+          values:
+          - ci-ln-0mi9cpt-76ef8-8g76q-lb
+      subnet:
+        filters:
+        - name: tag:Name
+          values:
+          - ci-ln-0mi9cpt-76ef8-8g76q-subnet-private-us-west-2a
+      tags:
+      - name: kubernetes.io/cluster/ci-ln-0mi9cpt-76ef8-8g76q
+        value: owned
+      - name: ci-nat-replace
+        value: "true"
+      - name: clusterName
+        value: ci-ln-0mi9cpt-76ef8
+      - name: expirationDate
+        value: 2026-04-18T09:29+00:00
+      userDataSecret:
+        name: worker-user-data
+status:
+  addresses:
+  - address: 10.0.46.98
+    type: InternalIP
+  - address: ip-10-0-46-98.us-west-2.compute.internal
+    type: InternalDNS
+  - address: ip-10-0-46-98.us-west-2.compute.internal
+    type: Hostname
+  conditions:
+  - lastTransitionTime: "2026-04-18T02:38:33Z"
+    status: "True"
+    type: Drainable
+  - lastTransitionTime: "2026-04-18T02:39:05Z"
+    status: "True"
+    type: InstanceExists
+  - lastTransitionTime: "2026-04-18T02:38:33Z"
+    status: "True"
+    type: Terminable
+  lastUpdated: "2026-04-18T02:42:05Z"
+  nodeRef:
+    kind: Node
+    name: ip-10-0-46-98.us-west-2.compute.internal
+    uid: 91af0add-66cb-48a7-a796-f45fdd6428eb
+  phase: Running
+  providerStatus:
+    conditions:
+    - lastTransitionTime: "2026-04-18T02:38:35Z"
+      message: Machine successfully created
+      reason: MachineCreationSucceeded
+      status: "True"
+      type: MachineCreation
+    instanceId: i-07fd1a10684a47016
+    instanceState: running

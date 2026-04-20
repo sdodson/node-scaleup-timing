@@ -1,0 +1,329 @@
+{
+  "images":  [
+    {
+      "id":  "bf66f3de5d3b84ea7039c869ec1707209ff67dc41ffd9ce2e171e55f531d2511",
+      "repoTags":  [
+        "quay.io/observatorium/token-refresher:latest"
+      ],
+      "repoDigests":  [
+        "quay.io/observatorium/token-refresher@sha256:1d99cf24a5a1d74daf73ac47b4e757f13ed5408e7441642bb7ad02bb71551841",
+        "quay.io/observatorium/token-refresher@sha256:721366017a72606d0022be291c40c300e7cdba2a45f79a485ce5790d865db47d"
+      ],
+      "size":  "10461829",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "9acc16699fc91d09570c0f517140c66a6749c5c768ad6fcb0399fcf236836f86",
+      "repoTags":  [
+        "quay.io/openshift-logging/promtail:v2.9.8"
+      ],
+      "repoDigests":  [
+        "quay.io/openshift-logging/promtail@sha256:37c4c781fb99ad787118c4ebebc1d81ac6415ba62c4d5965e3852e5721509909",
+        "quay.io/openshift-logging/promtail@sha256:f0e53a97d686fdab3ae1a4b43176dd0105ce53887b0faba528f3497f7765d26f"
+      ],
+      "size":  "478481622",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "7898abb33a74a916d91a94351b44991fcda28a72b09ccba5d4af00c7fa563b0b",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:047bc67c8325087d83a4cceac5a816d4cae0f451326d3d93f6ed95d5b4f1e66e"
+      ],
+      "size":  "1523459381",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "1a457f50de1ee5c4009e643522d1d9b96259ffccb410a53a97cd12baa0268783",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:125b54865cdad5a1cf3ec05151515bd0124eba6ee50945c21d697b357b556695"
+      ],
+      "size":  "495910664",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "ab3d6d41dac8bbb464275d7cf51431cf49a261fe2fcb59abff997e5bb9dc7064",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:1fe26db4717d8e56f7a9b5c411af0fd4f47003cdf087113667612a94232d5788"
+      ],
+      "size":  "432382230",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "e62241f185ad2055c80c91f32bea8bf0dfd04eab93362cfb6553dc169969276d",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3cc959735303e09911d931a8ffd4b475987cca954b882596c271699adc2ad6a6"
+      ],
+      "size":  "629447262",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "c880b3e51df81474342b044335f60b7ed62c1f8f4e4971b5041cdbf010c3f204",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3d4a4008021db07716a52b450080ab771ef8f333f091ce6cbf3bbe222a86b74f"
+      ],
+      "size":  "425120052",
+      "uid":  {
+        "value":  "1001"
+      },
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "e5e4c1d6700c3f857a65097a7609372a5a31e1e4fe9fe273ba60f926ae4dcc92",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3fb7c7319038c6d5e003d138270e78613223be4f4e252a6327d599e4182d01d3"
+      ],
+      "size":  "405825910",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "37d520f977062b259553919b765383e69d5502601d870d9f1012850a97748287",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:4f6b346f8ca4fd184663e9e3a7e6df978daeb9f60a365d76c45bd37ccd526e8c"
+      ],
+      "size":  "772910453",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "fb14b1e65abf907611e73d7a2e61088763757ffa3f4cc2eac8bb6349ce28b7b6",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:6592f41fdaa2b0ef2f3f10e23e4f2f41f029be31279ba63b749d956d68d023d2"
+      ],
+      "size":  "300687820",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "1e6bd7cf161f782f4e955b3ff7da012ae54a4b29ed511b1e0c3bea1cfed87df5",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:69035a0d0e216794443170cdb7ec31f96d1aa5de9ea4533dff57c229ee5d5052"
+      ],
+      "size":  "319723988",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "421ad409f4126f2ad5c4fb34a85d254f27bd6582066f1e1aa94eb23aab0de8ee",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:78863b6ff0d3f8e522075c80e7fba2df4a305eaaa3da8a3304d00bd4c35996a4"
+      ],
+      "size":  "367386385",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "fbd9816c27b5fbc636a5584b248c357841fde78268ded92366d5dea4bd3512e8",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:808495766f26fc3f2c2b6b836c4139da7e9559f9ee01017d3de2a90ae4b97089"
+      ],
+      "size":  "667284413",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "079f39a9c0ec99a04e2130a7d0d565bed380f16ea600fd025b387fbef18c22f7",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:909303218d5b14674aabe2d894b084701bf98c4fddfc099447855a5090239bb8"
+      ],
+      "size":  "533936598",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "77b2c5ad8aad843ad142b2151df0915825d740ce4e5baf99801e06bb2d34b727",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:965564a81616e17978f03959111d1db499583e8e486125739ae9fc7989fce57c"
+      ],
+      "size":  "1493153797",
+      "username":  "root",
+      "pinned":  false
+    },
+    {
+      "id":  "7a64083ffa85ffea2e0e4f1e43fe0ac26b15edc3ca60ebecaa4e87f796f49c5f",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:99d587d8a6deac96214a3cd9be4100afdd209f5d7035c0754997e9bb228f6e14"
+      ],
+      "size":  "664124915",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "276cb78cfd20c1e739c82fe99859525ff8549753a2e639b845fe63225b24ba30",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:9d581acf8ff9415b78cb3a72342183ebd6404138484187723319253326615f05"
+      ],
+      "size":  "505940199",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "1b207e27fd78a51003dea04c47716688c63bf21d34aba7562340b3bfea4e1fd0",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:abab92d447759cdedba8043d31da3496f795e4c910cc6e60914441221d639ffe"
+      ],
+      "size":  "1006758153",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "4891bfeac7e63cbe983bc92f4bd650db48de7bd5c241c487c0104285537f4c27",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:ba63800d7599664c73936321042e2787aafecddbe607843ae8c91f7f5faf7497"
+      ],
+      "size":  "403429800",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "a019a0c1a3d2f49b81b2bc82730dcd264f8783f8dcb4607850a971883cc09294",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c244a9c834031b2eabb0986540fc97dc7ec5ec1a19d0e655b99c9cafca146ad8"
+      ],
+      "size":  "291433389",
+      "username":  "",
+      "pinned":  true
+    },
+    {
+      "id":  "3d098fe54f58a4eda54fcee691ab0721e9623a2d8791c086aa8f4ee632bc73cf",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c49102b83ab6e24123d2af4bb19a4fc2f573400a120cf382eee593860d0f8309"
+      ],
+      "size":  "334053226",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "e510bcead13f84db6e8ebb04b4b884c49f6157a562e75d80407889e6bfe0418c",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:ca1c538f9a91ceb512229fd6f3b292551046ec05910edee4fac8637ff4938b3c"
+      ],
+      "size":  "303752278",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "d78b5af6be5ec90379d805dc2ad595f1b9db0aeec9c5a186465d674873b2d960",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:cb16569394fa384ed1e6b3b62d1f3f7908ca5a4b1f93deac575ff3c2bce200bf"
+      ],
+      "size":  "428546159",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "f02db39f5c0179f0365cd397a5c02fb5a3e4cbf593bff1506463b33c19d9cc4d",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:cc84f1cd2c13ffb488ff8f8b7d00eaf846f9f69d0211119c9bca8765f94eb249"
+      ],
+      "size":  "333163719",
+      "username":  "nobody",
+      "pinned":  false
+    },
+    {
+      "id":  "6a051a110eddff9046d6a8e75d3a941690345c8e1f1bfd9b81c2f6646ecce919",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:dee202ae1d67cdcf9771d0dbdf552d2306d8964fca12316966966a5e3da5f76d"
+      ],
+      "size":  "365747209",
+      "uid":  {
+        "value":  "65534"
+      },
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "fc25912ae2202d6ed214cc6c943984fa9f66da9096c86d465efccdb5af703eab",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:eb3908bbc1eaa4f598590b3ca29e5dcbd5f9797ab2c92bb54d001c30fc6daa7c"
+      ],
+      "size":  "517270911",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "6eeb671def60b2ca448d1b1339eca33b852e542916244bde5be9325904b9a525",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:f2fecf85302d67cffd08fb328f2eeec381f4edeb6ff70dda9320e23180ada919"
+      ],
+      "size":  "494699429",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "7c159ae01a1a05bc9166fc014fa915ba556646256adad501f2d8f3a61f588e30",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:fa12ccf2f6ca4022358f3ea68ae1ba47adfeea2b514f5c5c3a39f0cbb2264f5b"
+      ],
+      "size":  "308079829",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "8b15e82668b46ca45af0d2300ef8020f18baebf5b86786af77a526d751e0c5c0",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:fd6fd308aa5eb6387e454359b7a132afc88c78439201206f00c9f3954b2fda9f"
+      ],
+      "size":  "1000977826",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "0dc77c879950e6ca832c7fb0333a9824b230bec568e3ba1a752a1d08ffe9e8df",
+      "repoTags":  [],
+      "repoDigests":  [
+        "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:ffdb03f74c9d687fb793566a6b76b2dd8f39c547aeb807b88a5d1cba52f533ac"
+      ],
+      "size":  "319513063",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "c22d6dce81a7eb6b393292c2a9943d796e977a6c26c61b56590d34e199d0503a",
+      "repoTags":  [
+        "registry.redhat.io/openshift4/ose-oauth-proxy-rhel9:latest"
+      ],
+      "repoDigests":  [
+        "registry.redhat.io/openshift4/ose-oauth-proxy-rhel9@sha256:eb7244813fd299cb3b125799b5a03bf93e75110308331f8db1e3cbae3d739b0e",
+        "registry.redhat.io/openshift4/ose-oauth-proxy-rhel9@sha256:f85223c9693ecb0e69e156fe28c980d0d4edeaf823142327b0a4033e0fc89074"
+      ],
+      "size":  "304600334",
+      "username":  "",
+      "pinned":  false
+    }
+  ]
+}

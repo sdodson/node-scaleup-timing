@@ -1,0 +1,28 @@
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+graphical.target @26.771s
+└─multi-user.target @26.771s
+  └─kubelet.service @26.676s +94ms
+    └─crio.service @26.308s +359ms
+      └─kubelet-dependencies.target @26.294s
+        └─chrony-wait.service @2.226s +24.067s
+          └─chronyd.service @2.175s +43ms
+            └─coreos-platform-chrony-config.service @2.119s +44ms
+              └─basic.target @2.096s
+                └─dbus-broker.service @2.073s +18ms
+                  └─dbus.socket @2.051s
+                    └─sysinit.target @2.032s
+                      └─systemd-update-done.service @2.021s +5ms
+                        └─ldconfig.service @1.839s +176ms
+                          └─local-fs.target @1.815s
+                            └─run-credentials-systemd\x2dtmpfiles\x2dsetup.service.mount @1.884s
+                              └─local-fs-pre.target @1.632s
+                                └─systemd-tmpfiles-setup-dev.service @1.005s +37ms
+                                  └─systemd-sysusers.service @938ms +46ms
+                                    └─systemd-remount-fs.service @850ms +62ms
+                                      └─systemd-fsck-root.service @584542y 2w 2d 20h 1min 48.032s +26ms
+                                        └─dracut-pre-mount.service @584542y 2w 2d 20h 1min 47.925s +62ms
+                                          └─cryptsetup.target @510ms
+                                            └─cryptsetup-pre.target @506ms
+                                              └─clevis-luks-askpass.path @467ms

@@ -1,0 +1,4 @@
+# Kubeconfig files contain embedded client certificates and private keys
+kubeconfig
+*.kubeconfig
+cluster-bot-*.kubeconfig
