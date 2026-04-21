@@ -22,14 +22,14 @@
 | **Boot 1: Ignition fetch (from Azure IMDS)** | 19:35:17 | 19:35:18 | ~1s | Config from custom data / SR0 |
 | **Boot 1: Ignition stages (kargs/disks/mount/files)** | 19:35:18 | 19:35:26 | ~8s | Write configs, systemd units |
 | **Boot 1: Pivot to real root + first-boot services** | 19:35:26 | 19:35:40 | ~14s | ostree setup, sysroot transition |
-| **Boot 1: MCD firstboot provisioning** | 19:35:40 | 19:38:24 | ~2m44s | machine-config-daemon applying rendered config, rpm-ostree layering, **LARGEST PHASE** |
+| **Boot 1: MCD firstboot provisioning** | 19:35:40 | 19:38:24 | ~2m 44sec | machine-config-daemon applying rendered config, rpm-ostree layering, **LARGEST PHASE** |
 | **Boot 1: Reboot initiated** | 19:38:24 | 19:38:50 | ~26s | Shutdown + BIOS/bootloader |
 | **Boot 2: Kernel + initrd + sysroot** | 19:38:50 | 19:39:02 | ~12s | Second boot, faster (no ignition) |
 | **Boot 2: chrony-wait** | 19:39:02 | 19:39:27 | ~24s | Waiting for NTP time sync |
 | **Boot 2: OVS configuration** | 19:39:04 | 19:39:18 | ~14s | Open vSwitch setup (parallel with chrony) |
 | **Boot 2: CRI-O start** | 19:39:27 | 19:39:28 | ~1s | Container runtime |
 | **Boot 2: Kubelet start** | 19:39:28 | 19:39:28 | <1s | Kubelet process started |
-| **Boot 2: Kubelet -> NodeReady** | 19:39:28 | 19:41:42 | ~2m14s | CSR approval, CNI setup, node registration |
+| **Boot 2: Kubelet -> NodeReady** | 19:39:28 | 19:41:42 | ~2m 14sec | CSR approval, CNI setup, node registration |
 
 ## Time Spent Summary
 
@@ -37,21 +37,21 @@
 |----------|----------|------------|
 | Azure VM Provisioning | ~32s | 8% |
 | Boot 1: Ignition + OS Setup | ~29s | 7% |
-| Boot 1: MCD Firstboot (rpm-ostree) | **~2m44s** | **39%** |
+| Boot 1: MCD Firstboot (rpm-ostree) | **~2m 44sec** | **39%** |
 | Reboot (shutdown + POST) | ~26s | 6% |
 | Boot 2: Kernel/initrd/sysroot | ~12s | 3% |
 | Boot 2: chrony-wait (NTP sync) | ~24s | 6% |
 | Boot 2: OVS configuration | ~14s | 3% |
 | Boot 2: CRI-O + Kubelet start | ~1s | <1% |
-| Boot 2: Kubelet to NodeReady | **~2m14s** | **31%** |
+| Boot 2: Kubelet to NodeReady | **~2m 14sec** | **31%** |
 
 ## Key Observations
 
-1. **MCD firstboot provisioning is the single largest phase (~2m44s, 39%)**. This includes
+1. **MCD firstboot provisioning is the single largest phase (~2m 44sec, 39%)**. This includes
    machine-config-daemon applying the rendered worker config, running rpm-ostree operations,
    and preparing for the mandatory reboot.
 
-2. **Kubelet to NodeReady takes ~2m14s (31%)**. This time is spent on:
+2. **Kubelet to NodeReady takes ~2m 14sec (31%)**. This time is spent on:
    - CSR generation and approval (~30s from kubelet start to CSR issued at 19:39:59)
    - CNI/network plugin readiness
    - Node condition reporting cycle (kubelet logs "Node not becoming ready in time" at 19:41:28)

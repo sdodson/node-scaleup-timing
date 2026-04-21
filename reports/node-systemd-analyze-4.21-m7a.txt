@@ -1,2 +1,0 @@
-Startup finished in 4.409s (kernel) + 3.641s (initrd) + 18.839s (userspace) = 26.891s 
-graphical.target reached after 18.823s in userspace.

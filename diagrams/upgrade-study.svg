@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 490" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bg-upgrade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f9fa"/>
+      <stop offset="100%" style="stop-color:#e9ecef"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="490" rx="8" fill="url(#bg-upgrade)"/>
+  <text x="450" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#212529">Upgrade Study: Scale-Up Time by OCP Version (ARO brazilsouth, D4s_v5)</text>
+  <text x="450" y="46" text-anchor="middle" font-size="10" fill="#868e96">Same cluster upgraded through versions — boot image fixed at 4.16. Stacked bar = mean phase time.</text>
+
+  <!-- Scale: 1s = 1.6px, max ~400s => 640px, bars start at x=130 -->
+  <!-- X-axis ticks -->
+  <line x1="130" y1="400" x2="130" y2="405" stroke="#495057"/>
+  <text x="130" y="416" text-anchor="middle" font-size="9" fill="#495057">0s</text>
+  <line x1="290" y1="400" x2="290" y2="405" stroke="#495057"/>
+  <text x="290" y="416" text-anchor="middle" font-size="9" fill="#495057">100s</text>
+  <line x1="450" y1="400" x2="450" y2="405" stroke="#495057"/>
+  <text x="450" y="416" text-anchor="middle" font-size="9" fill="#495057">200s</text>
+  <line x1="610" y1="400" x2="610" y2="405" stroke="#495057"/>
+  <text x="610" y="416" text-anchor="middle" font-size="9" fill="#495057">300s</text>
+  <line x1="770" y1="400" x2="770" y2="405" stroke="#495057"/>
+  <text x="770" y="416" text-anchor="middle" font-size="9" fill="#495057">400s</text>
+  <!-- Gridlines -->
+  <line x1="290" y1="65" x2="290" y2="400" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="450" y1="65" x2="450" y2="400" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="610" y1="65" x2="610" y2="400" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="770" y1="65" x2="770" y2="400" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <!-- Axis line -->
+  <line x1="130" y1="400" x2="810" y2="400" stroke="#495057" stroke-width="1"/>
+
+  <!-- Row 1: OCP 4.16.30 — 233s total -->
+  <text x="120" y="88" text-anchor="end" font-size="11" fill="#212529" font-weight="bold">4.16.30</text>
+  <text x="120" y="101" text-anchor="end" font-size="9" fill="#868e96">baseline</text>
+  <!-- VM Prov: 22s -->
+  <rect x="130" y="76" width="35" height="30" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="148" y="95" text-anchor="middle" font-size="8" fill="white">22s</text>
+  <!-- Ignition+Pivot: 16s -->
+  <rect x="165" y="76" width="26" height="30" rx="2" fill="#7048e8" opacity="0.85"/>
+  <!-- MCD firstboot: 92s + 11s remainder = 103s -->
+  <rect x="191" y="76" width="165" height="30" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="273" y="95" text-anchor="middle" font-size="10" fill="white" font-weight="bold">MCD 92s</text>
+  <!-- Reboot: 8s -->
+  <rect x="356" y="76" width="13" height="30" rx="2" fill="#495057" opacity="0.85"/>
+  <!-- No chrony-wait on 4.16 -->
+  <!-- CRI-O+Kubelet start: 13s -->
+  <rect x="369" y="76" width="21" height="30" rx="2" fill="#2b8a3e" opacity="0.85"/>
+  <!-- Kubelet->NodeReady: 71s -->
+  <rect x="390" y="76" width="114" height="30" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="447" y="95" text-anchor="middle" font-size="10" fill="white" font-weight="bold">KTR 71s</text>
+  <!-- Total label -->
+  <text x="512" y="95" font-size="11" font-weight="bold" fill="#212529">3m 53sec</text>
+
+  <!-- Row 2: OCP 4.17.51 — 243s total -->
+  <text x="120" y="148" text-anchor="end" font-size="11" fill="#212529" font-weight="bold">4.17.51</text>
+  <text x="120" y="161" text-anchor="end" font-size="9" fill="#868e96">+1 upgrade</text>
+  <!-- VM Prov: 22s -->
+  <rect x="130" y="136" width="35" height="30" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="148" y="155" text-anchor="middle" font-size="8" fill="white">22s</text>
+  <!-- Ignition+Pivot: 18s -->
+  <rect x="165" y="136" width="29" height="30" rx="2" fill="#7048e8" opacity="0.85"/>
+  <!-- MCD firstboot: 95s + 11s remainder = 106s -->
+  <rect x="194" y="136" width="170" height="30" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="279" y="155" text-anchor="middle" font-size="10" fill="white" font-weight="bold">MCD 95s</text>
+  <!-- Reboot: 7s -->
+  <rect x="364" y="136" width="11" height="30" rx="2" fill="#495057" opacity="0.85"/>
+  <!-- chrony-wait: 24s -->
+  <rect x="375" y="136" width="38" height="30" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="394" y="155" text-anchor="middle" font-size="8" fill="white">24s</text>
+  <!-- CRI-O+Kubelet: 9s -->
+  <rect x="413" y="136" width="14" height="30" rx="2" fill="#2b8a3e" opacity="0.85"/>
+  <!-- KL->NodeReady: 57s -->
+  <rect x="427" y="136" width="91" height="30" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="473" y="155" text-anchor="middle" font-size="10" fill="white" font-weight="bold">KTR 57s</text>
+  <!-- Total label -->
+  <text x="526" y="155" font-size="11" font-weight="bold" fill="#212529">4m 03sec</text>
+
+  <!-- Row 3: OCP 4.18.26 — 262s total (excl. round 4 outlier) -->
+  <text x="120" y="208" text-anchor="end" font-size="11" fill="#212529" font-weight="bold">4.18.26</text>
+  <text x="120" y="221" text-anchor="end" font-size="9" fill="#868e96">+2 versions</text>
+  <!-- VM Prov: 22s -->
+  <rect x="130" y="196" width="35" height="30" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="148" y="215" text-anchor="middle" font-size="8" fill="white">22s</text>
+  <!-- Ignition+Pivot: 15s -->
+  <rect x="165" y="196" width="24" height="30" rx="2" fill="#7048e8" opacity="0.85"/>
+  <!-- MCD firstboot: 97s + 19s remainder = 116s -->
+  <rect x="189" y="196" width="186" height="30" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="282" y="215" text-anchor="middle" font-size="10" fill="white" font-weight="bold">MCD 97s</text>
+  <!-- Reboot: 8s -->
+  <rect x="375" y="196" width="13" height="30" rx="2" fill="#495057" opacity="0.85"/>
+  <!-- chrony-wait: 24s -->
+  <rect x="388" y="196" width="38" height="30" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="407" y="215" text-anchor="middle" font-size="8" fill="white">24s</text>
+  <!-- CRI-O+Kubelet: 9s -->
+  <rect x="426" y="196" width="14" height="30" rx="2" fill="#2b8a3e" opacity="0.85"/>
+  <!-- KL->NodeReady: 69s -->
+  <rect x="440" y="196" width="110" height="30" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="495" y="215" text-anchor="middle" font-size="10" fill="white" font-weight="bold">KTR 69s</text>
+  <!-- Total label -->
+  <text x="558" y="215" font-size="11" font-weight="bold" fill="#212529">4m 22sec ⁱ</text>
+
+  <!-- Row 4: OCP 4.19.27 — 274s total -->
+  <text x="120" y="268" text-anchor="end" font-size="11" fill="#212529" font-weight="bold">4.19.27</text>
+  <text x="120" y="281" text-anchor="end" font-size="9" fill="#868e96">+3 versions</text>
+  <!-- VM Prov: 22s -->
+  <rect x="130" y="256" width="35" height="30" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="148" y="275" text-anchor="middle" font-size="8" fill="white">22s</text>
+  <!-- Ignition+Pivot: 24s -->
+  <rect x="165" y="256" width="38" height="30" rx="2" fill="#7048e8" opacity="0.85"/>
+  <text x="184" y="275" text-anchor="middle" font-size="8" fill="white">24s</text>
+  <!-- MCD firstboot: 103s + 23s remainder = 126s -->
+  <rect x="203" y="256" width="202" height="30" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="304" y="275" text-anchor="middle" font-size="10" fill="white" font-weight="bold">MCD 103s</text>
+  <!-- Reboot: 8s -->
+  <rect x="405" y="256" width="13" height="30" rx="2" fill="#495057" opacity="0.85"/>
+  <!-- chrony-wait: 24s -->
+  <rect x="418" y="256" width="38" height="30" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="437" y="275" text-anchor="middle" font-size="8" fill="white">24s</text>
+  <!-- CRI-O+Kubelet: 11s -->
+  <rect x="456" y="256" width="18" height="30" rx="2" fill="#2b8a3e" opacity="0.85"/>
+  <!-- KL->NodeReady: 58s -->
+  <rect x="474" y="256" width="93" height="30" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="521" y="275" text-anchor="middle" font-size="10" fill="white" font-weight="bold">KTR 58s</text>
+  <!-- Total label -->
+  <text x="575" y="275" font-size="11" font-weight="bold" fill="#212529">4m 34sec</text>
+
+  <!-- Row 5: OCP 4.20.18 — 278s total (excl. round 4 outlier) -->
+  <!-- VM Prov: 22s=35px, Boot1 rem: 48s=77px, MCD: 111s=178px, Reboot: 8s=13px, chrony: 24s=38px, CRI-O+KL: 9s=14px, KL->Ready: 57s=91px -->
+  <text x="120" y="328" text-anchor="end" font-size="11" fill="#212529" font-weight="bold">4.20.18</text>
+  <text x="120" y="341" text-anchor="end" font-size="9" fill="#868e96">+4 versions</text>
+  <!-- VM Prov: 22s -->
+  <rect x="130" y="316" width="35" height="30" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="148" y="335" text-anchor="middle" font-size="8" fill="white">22s</text>
+  <!-- Boot1 remainder (ign+pivot+kernel): 48s -->
+  <rect x="165" y="316" width="77" height="30" rx="2" fill="#7048e8" opacity="0.85"/>
+  <text x="204" y="335" text-anchor="middle" font-size="8" fill="white">48s</text>
+  <!-- MCD firstboot: 111s -->
+  <rect x="242" y="316" width="178" height="30" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="331" y="335" text-anchor="middle" font-size="10" fill="white" font-weight="bold">MCD 111s</text>
+  <!-- Reboot: 8s -->
+  <rect x="420" y="316" width="13" height="30" rx="2" fill="#495057" opacity="0.85"/>
+  <!-- chrony-wait: 24s -->
+  <rect x="433" y="316" width="38" height="30" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="452" y="335" text-anchor="middle" font-size="8" fill="white">24s</text>
+  <!-- CRI-O+Kubelet: 9s -->
+  <rect x="471" y="316" width="14" height="30" rx="2" fill="#2b8a3e" opacity="0.85"/>
+  <!-- KL->NodeReady: 57s -->
+  <rect x="485" y="316" width="91" height="30" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="531" y="335" text-anchor="middle" font-size="10" fill="white" font-weight="bold">KTR 57s</text>
+  <!-- Total label -->
+  <text x="584" y="335" font-size="11" font-weight="bold" fill="#212529">4m 38sec ⁱⁱ</text>
+
+  <!-- Row 6: OCP 4.20.18 native — 296s total (excl. r8-z1 outlier) -->
+  <!-- VM Prov: 21s=34px, Boot1 rem: 54s=86px, MCD: 126s=202px, Reboot: 6s=10px, chrony: 24s=38px, CRI-O+KL: 8s=13px, KL->Ready: 57s=91px -->
+  <text x="120" y="388" text-anchor="end" font-size="11" fill="#212529" font-weight="bold">4.20 native</text>
+  <text x="120" y="401" text-anchor="end" font-size="9" fill="#2b8a3e">boot img 4.20</text>
+  <!-- VM Prov: 21s -->
+  <rect x="130" y="376" width="34" height="30" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="147" y="395" text-anchor="middle" font-size="8" fill="white">21s</text>
+  <!-- Boot1 remainder (ign+pivot+kernel): 54s -->
+  <rect x="164" y="376" width="86" height="30" rx="2" fill="#7048e8" opacity="0.85"/>
+  <text x="207" y="395" text-anchor="middle" font-size="8" fill="white">54s</text>
+  <!-- MCD firstboot: 126s -->
+  <rect x="250" y="376" width="202" height="30" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="351" y="395" text-anchor="middle" font-size="10" fill="white" font-weight="bold">MCD 126s</text>
+  <!-- Reboot: 6s -->
+  <rect x="452" y="376" width="10" height="30" rx="2" fill="#495057" opacity="0.85"/>
+  <!-- chrony-wait: 24s -->
+  <rect x="462" y="376" width="38" height="30" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="481" y="395" text-anchor="middle" font-size="8" fill="white">24s</text>
+  <!-- CRI-O+Kubelet: 8s -->
+  <rect x="500" y="376" width="13" height="30" rx="2" fill="#2b8a3e" opacity="0.85"/>
+  <!-- KL->NodeReady: 57s -->
+  <rect x="513" y="376" width="91" height="30" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="559" y="395" text-anchor="middle" font-size="10" fill="white" font-weight="bold">KTR 57s</text>
+  <!-- Total label -->
+  <text x="612" y="395" font-size="11" font-weight="bold" fill="#212529">4m 56sec ⁱⁱⁱ</text>
+
+  <!-- Legend -->
+  <line x1="130" y1="430" x2="860" y2="430" stroke="#dee2e6" stroke-width="1"/>
+  <rect x="130" y="443" width="12" height="12" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="147" y="453" font-size="9" fill="#495057">VM Provision</text>
+  <rect x="220" y="443" width="12" height="12" rx="2" fill="#7048e8" opacity="0.85"/>
+  <text x="237" y="453" font-size="9" fill="#495057">Ign+Pivot+Other</text>
+  <rect x="330" y="443" width="12" height="12" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="347" y="453" font-size="9" fill="#495057">MCD Firstboot</text>
+  <rect x="435" y="443" width="12" height="12" rx="2" fill="#495057" opacity="0.85"/>
+  <text x="452" y="453" font-size="9" fill="#495057">Reboot</text>
+  <rect x="500" y="443" width="12" height="12" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="517" y="453" font-size="9" fill="#495057">chrony-wait</text>
+  <rect x="585" y="443" width="12" height="12" rx="2" fill="#2b8a3e" opacity="0.85"/>
+  <text x="602" y="453" font-size="9" fill="#495057">CRI-O+Kubelet</text>
+  <rect x="680" y="443" width="12" height="12" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="697" y="453" font-size="9" fill="#495057">KL→NodeReady</text>
+
+  <!-- Boot image annotation -->
+  <text x="450" y="478" text-anchor="middle" font-size="9" fill="#868e96">Boot image fixed at aro_416 (4.16) except native row. ⁱ n=21 (excl r4) ⁱⁱ n=21 (excl r4) ⁱⁱⁱ n=23 (excl r8-z1).</text>
+</svg>

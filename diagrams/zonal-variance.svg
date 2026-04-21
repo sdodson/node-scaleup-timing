@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f9fa"/>
+      <stop offset="100%" style="stop-color:#e9ecef"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="420" rx="8" fill="url(#bg2)"/>
+  <text x="450" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#212529">Zonal Variance: Scale-Up Time by Zone (Azure eastus2)</text>
+  <text x="450" y="50" text-anchor="middle" font-size="11" fill="#868e96">Same machinesets created simultaneously — all variance is infrastructure-side</text>
+
+  <!-- Y-axis -->
+  <line x1="120" y1="75" x2="120" y2="360" stroke="#495057" stroke-width="1"/>
+  <text x="25" y="220" text-anchor="middle" font-size="12" fill="#495057" transform="rotate(-90, 25, 220)">Total Scale-Up Time (seconds)</text>
+
+  <!-- Y-axis ticks -->
+  <line x1="115" y1="85" x2="120" y2="85" stroke="#495057"/>  <text x="110" y="89" text-anchor="end" font-size="10" fill="#495057">500</text>
+  <line x1="115" y1="140" x2="120" y2="140" stroke="#495057"/> <text x="110" y="144" text-anchor="end" font-size="10" fill="#495057">400</text>
+  <line x1="115" y1="195" x2="120" y2="195" stroke="#495057"/> <text x="110" y="199" text-anchor="end" font-size="10" fill="#495057">300</text>
+  <line x1="115" y1="250" x2="120" y2="250" stroke="#495057"/> <text x="110" y="254" text-anchor="end" font-size="10" fill="#495057">200</text>
+  <line x1="115" y1="305" x2="120" y2="305" stroke="#495057"/> <text x="110" y="309" text-anchor="end" font-size="10" fill="#495057">100</text>
+  <line x1="115" y1="360" x2="120" y2="360" stroke="#495057"/> <text x="110" y="364" text-anchor="end" font-size="10" fill="#495057">0</text>
+
+  <!-- Grid lines -->
+  <line x1="120" y1="85" x2="860" y2="85" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="120" y1="140" x2="860" y2="140" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="120" y1="195" x2="860" y2="195" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="120" y1="250" x2="860" y2="250" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="120" y1="305" x2="860" y2="305" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+
+  <!-- X-axis -->
+  <line x1="120" y1="360" x2="860" y2="360" stroke="#495057" stroke-width="1"/>
+
+  <!-- D32s_v3 bars (zones 1,2,3) -->
+  <!-- Zone 1: 305s => height = 305*0.55 = 167.75, y = 360-167.75 = 192.25 -->
+  <rect x="170" y="192" width="55" height="168" rx="3" fill="#e03131" opacity="0.8"/>
+  <text x="197" y="186" text-anchor="middle" font-size="11" font-weight="bold" fill="#e03131">305s</text>
+  <text x="197" y="174" text-anchor="middle" font-size="9" fill="#868e96">5m 05sec</text>
+
+  <!-- Zone 2: 466s => height = 466*0.55 = 256.3, y = 360-256.3 = 103.7 -->
+  <rect x="240" y="104" width="55" height="256" rx="3" fill="#e03131" opacity="0.8"/>
+  <text x="267" y="98" text-anchor="middle" font-size="11" font-weight="bold" fill="#e03131">466s</text>
+  <text x="267" y="86" text-anchor="middle" font-size="9" fill="#868e96">7m 46sec</text>
+
+  <!-- Zone 3: 402s => height = 402*0.55 = 221.1, y = 360-221.1 = 138.9 -->
+  <rect x="310" y="139" width="55" height="221" rx="3" fill="#e03131" opacity="0.8"/>
+  <text x="337" y="133" text-anchor="middle" font-size="11" font-weight="bold" fill="#e03131">402s</text>
+  <text x="337" y="121" text-anchor="middle" font-size="9" fill="#868e96">6m 42sec</text>
+
+  <!-- D32s_v5 bars (zones 1,2,3) -->
+  <!-- Zone 1: 237s => height = 237*0.55 = 130.35, y = 360-130.35 = 229.65 -->
+  <rect x="470" y="230" width="55" height="130" rx="3" fill="#4263eb" opacity="0.8"/>
+  <text x="497" y="224" text-anchor="middle" font-size="11" font-weight="bold" fill="#4263eb">237s</text>
+  <text x="497" y="212" text-anchor="middle" font-size="9" fill="#868e96">3m 57sec</text>
+
+  <!-- Zone 2: 326s => height = 326*0.55 = 179.3, y = 360-179.3 = 180.7 -->
+  <rect x="540" y="181" width="55" height="179" rx="3" fill="#4263eb" opacity="0.8"/>
+  <text x="567" y="175" text-anchor="middle" font-size="11" font-weight="bold" fill="#4263eb">326s</text>
+  <text x="567" y="163" text-anchor="middle" font-size="9" fill="#868e96">5m 26sec</text>
+
+  <!-- Zone 3: 328s => height = 328*0.55 = 180.4, y = 360-180.4 = 179.6 -->
+  <rect x="610" y="180" width="55" height="180" rx="3" fill="#4263eb" opacity="0.8"/>
+  <text x="637" y="174" text-anchor="middle" font-size="11" font-weight="bold" fill="#4263eb">328s</text>
+  <text x="637" y="162" text-anchor="middle" font-size="9" fill="#868e96">5m 28sec</text>
+
+  <!-- Zone labels -->
+  <text x="197" y="378" text-anchor="middle" font-size="10" fill="#495057">Z1</text>
+  <text x="267" y="378" text-anchor="middle" font-size="10" fill="#495057">Z2</text>
+  <text x="337" y="378" text-anchor="middle" font-size="10" fill="#495057">Z3</text>
+  <text x="267" y="395" text-anchor="middle" font-size="11" font-weight="bold" fill="#e03131">D32s_v3</text>
+
+  <text x="497" y="378" text-anchor="middle" font-size="10" fill="#495057">Z1</text>
+  <text x="567" y="378" text-anchor="middle" font-size="10" fill="#495057">Z2</text>
+  <text x="637" y="378" text-anchor="middle" font-size="10" fill="#495057">Z3</text>
+  <text x="567" y="395" text-anchor="middle" font-size="11" font-weight="bold" fill="#4263eb">D32s_v5</text>
+
+  <!-- Spread annotations -->
+  <!-- D32s_v3 spread bracket -->
+  <line x1="375" y1="104" x2="395" y2="104" stroke="#e03131" stroke-width="1.5"/>
+  <line x1="395" y1="104" x2="395" y2="192" stroke="#e03131" stroke-width="1.5"/>
+  <line x1="375" y1="192" x2="395" y2="192" stroke="#e03131" stroke-width="1.5"/>
+  <text x="402" y="152" font-size="10" font-weight="bold" fill="#e03131">161s spread</text>
+  <text x="402" y="165" font-size="9" fill="#868e96">(2m 41sec)</text>
+
+  <!-- D32s_v5 spread bracket -->
+  <line x1="675" y1="180" x2="695" y2="180" stroke="#4263eb" stroke-width="1.5"/>
+  <line x1="695" y1="180" x2="695" y2="230" stroke="#4263eb" stroke-width="1.5"/>
+  <line x1="675" y1="230" x2="695" y2="230" stroke="#4263eb" stroke-width="1.5"/>
+  <text x="702" y="200" font-size="10" font-weight="bold" fill="#4263eb">91s spread</text>
+  <text x="702" y="213" font-size="9" fill="#868e96">(1m 31sec)</text>
+
+  <!-- Takeaway -->
+  <text x="780" y="290" text-anchor="middle" font-size="10" fill="#495057" font-style="italic">v5: faster + more</text>
+  <text x="780" y="305" text-anchor="middle" font-size="10" fill="#495057" font-style="italic">consistent across zones</text>
+</svg>

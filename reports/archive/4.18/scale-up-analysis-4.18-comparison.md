@@ -1,0 +1,186 @@
+# Node Scale-Up Comparison: OpenShift 4.18 vs 4.22 (Azure)
+
+## Cluster Details
+
+| | OCP 4.18 | OCP 4.22 |
+|--|---------|---------|
+| **Server Version** | 4.18.36 | 4.22 (latest) |
+| **Kubernetes** | v1.31.14 | v1.35.3 |
+| **Region** | westus | eastus2 |
+| **CRI-O** | 1.31.13 | 1.35.2 |
+| **Cluster** | ci-ln-wy83gzk-1d09d | ci-ln-rm0x8pk-1d09d |
+
+## Total Scale-Up Times
+
+| VM Type | OCP 4.18 | OCP 4.22 | Difference |
+|---------|---------|---------|------------|
+| **Standard_D4s_v3** | **7m 54sec** | **7m 3sec** | 4.22 is 51s faster |
+| **Standard_D4s_v5** | **5m 23sec** | **4m 43sec** | 4.22 is 40s faster |
+| **Standard_D4s_v6** | **4m 20sec** | **3m 59sec** | 4.22 is 21s faster |
+
+## Detailed Phase Comparison
+
+### Standard_D4s_v3
+
+| Phase | OCP 4.18 | OCP 4.22 |
+|-------|---------|---------|
+| Scale → VM boot | 22:29:27 → 22:30:41 = ~74s | 19:34:39 → 19:35:11 = ~32s |
+| Boot 1: Ignition (all) | 22:30:41 → 22:30:57 = ~16s | 19:35:11 → 19:35:26 = ~15s |
+| Boot 1: chrony-wait | 22:31:35 → 22:31:60 = ~24s | (during MCD, not on critical path) |
+| Boot 1: MCD rpm-ostree rebase | 22:32:40 → 22:33:44 = ~64s | 19:37:XX → 19:38:XX = ~120s |
+| Boot 1: MCD total + reboot | 22:30:57 → 22:34:52 = ~235s | 19:35:26 → 19:38:50 = ~204s |
+| Boot 2: chrony-wait | 24.1s | 24.1s |
+| Boot 2: systemd-analyze total | 44.9s | 40.9s |
+| Boot 2: Kubelet → NodeReady | 22:35:35 → 22:37:11 = ~96s | 19:39:28 → 19:41:42 = ~134s |
+| **Total** | **~7m 54sec** | **~7m 3sec** |
+
+### Standard_D4s_v5
+
+| Phase | OCP 4.18 | OCP 4.22 |
+|-------|---------|---------|
+| Scale → VM boot | 22:39:15 → 22:40:26 = ~71s | 19:45:12 → 19:45:31 = ~19s |
+| Boot 1: Ignition (all) | 22:40:26 → 22:40:36 = ~10s | 19:45:31 → 19:45:49 = ~18s |
+| Boot 1: MCD rpm-ostree rebase | 22:41:47 → 22:42:24 = ~37s | 19:46:31 → 19:47:60 = ~89s |
+| Boot 1: MCD total + reboot | ~2m 37sec | ~2m 24sec |
+| Boot 2: systemd-analyze total | 34.1s | 31.7s |
+| Boot 2: chrony-wait | 24.1s | 24.1s |
+| Boot 2: Kubelet → NodeReady | 22:43:42 → 22:44:34 = ~52s | 19:48:52 → 19:49:48 = ~56s |
+| **Total** | **~5m 23sec** | **~4m 43sec** |
+
+### Standard_D4s_v6
+
+| Phase | OCP 4.18 | OCP 4.22 |
+|-------|---------|---------|
+| Scale → VM boot | 23:12:59 → 23:13:54 = ~55s | 20:09:02 → 20:09:20 = ~18s |
+| Boot 1: Ignition (all) | 23:13:54 → 23:14:04 = ~10s | 20:09:20 → 20:09:30 = ~10s |
+| Boot 1: MCD rpm-ostree rebase | 23:14:50 → 23:15:22 = ~32s | 20:10:21 → 20:11:11 = ~50s |
+| Boot 1: MCD total + reboot | ~1m 59sec | ~2m 09sec |
+| Boot 2: systemd-analyze total | 30.9s | 31.7s |
+| Boot 2: chrony-wait | 24.1s | 24.1s |
+| Boot 2: Kubelet → NodeReady | 23:16:22 → 23:17:15 = ~53s | 20:11:59 → 20:13:01 = ~62s |
+| **Total** | **~4m 20sec** | **~3m 59sec** |
+
+## Key Observations
+
+### 1. VM Provisioning is faster on OCP 4.22 cluster (eastus2)
+The OCP 4.22 cluster in eastus2 consistently provisions VMs faster than the 4.18 cluster
+in westus. This is likely a regional Azure capacity difference, not an OCP version difference.
+- v3: 32s (4.22) vs 74s (4.18) — 42s faster
+- v5: 19s (4.22) vs 71s (4.18) — 52s faster
+- v6: 18s (4.22) vs 55s (4.18) — 37s faster
+
+### 2. rpm-ostree rebase is FASTER on 4.18
+Surprisingly, the rpm-ostree rebase is actually faster on 4.18:
+- v3: 64s (4.18) vs 120s (4.22)
+- v5: 37s (4.18) vs 89s (4.22)
+- v6: 32s (4.18) vs 50s (4.22)
+
+This is likely because 4.18 has a smaller OS image delta (older RHCOS base matches the
+target more closely) or the 4.22 image is simply larger.
+
+### 3. chrony-wait is identical at ~24s
+Across all 12 boots (3 VM types × 2 versions × 2 boots each), chrony-wait is consistently
+~24.07s. This confirms it's a fixed cost from the PHC refclock polling behavior, not
+hardware or version dependent.
+
+### 4. systemd boot is slightly slower on 4.18
+The v3 shows the biggest difference: 44.9s (4.18) vs 40.9s (4.22). The v5 and v6 are
+closer (34.1s vs 31.7s and 30.9s vs 31.7s respectively). The 4.18 v3 boot has a 2.052s
+ldconfig.service which is unusually slow.
+
+### 5. Kubelet-to-NodeReady is similar
+- v3: 96s (4.18) vs 134s (4.22)
+- v5: 52s (4.18) vs 56s (4.22)
+- v6: 53s (4.18) vs 62s (4.22)
+
+4.18 is slightly faster here, possibly due to fewer DaemonSet pods or lighter CNI setup.
+
+### 6. VM generation matters more than OCP version
+The biggest factor in scale-up time is the VM generation, not the OCP version:
+
+| VM Gen | 4.18 | 4.22 | Average |
+|--------|------|------|---------|
+| v3 | 7m 54sec | 7m 03sec | **~7m 28sec** |
+| v5 | 5m 23sec | 4m 43sec | **~5m 03sec** |
+| v6 | 4m 20sec | 3m 59sec | **~4m 10sec** |
+
+Moving from v3 to v6 saves **~3m 18sec on average (44%)** regardless of OCP version.
+
+## chrony Configuration (from 4.18 cluster)
+
+### /etc/chrony.conf (base)
+```
+pool 2.rhel.pool.ntp.org iburst
+sourcedir /run/chrony-dhcp
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+leapsectz right/UTC
+```
+
+### /run/coreos/platform-chrony.conf (Azure override, generated by coreos-platform-chrony-config)
+```
+# Comments the pool and makestep from base, then adds:
+makestep 1.0 -1
+refclock PHC /dev/ptp_hyperv poll 3 dpoll -2 offset 0
+leapsectz right/UTC
+```
+
+### chrony-wait.service
+```
+ExecStart=/usr/bin/chronyc -h 127.0.0.1,::1 waitsync 0 0.1 0.0 1
+TimeoutStartSec=180
+```
+
+The `waitsync 0 0.1 0.0 1` means: wait unlimited updates, remaining correction <0.1s,
+any skew, timeout 1 second (per check iteration, not total).
+
+### Specific Tuning Recommendations
+
+Based on the actual config:
+
+1. **`refclock PHC /dev/ptp_hyperv poll 3 dpoll -2 offset 0`**
+   - `poll 3` = minimum 8-second intervals between clock updates
+   - `dpoll -2` = driver polls every 250ms
+   - The 24s delay comes from chrony needing ~3 polling intervals (3 × 8s = 24s) to
+     collect enough samples to select the source
+   - **Recommendation**: Add `minsamples 1` or `minsamples 2` to reduce required samples:
+     ```
+     refclock PHC /dev/ptp_hyperv poll 3 dpoll -2 offset 0 minsamples 1
+     ```
+     This could reduce chrony-wait from ~24s to ~8-16s.
+
+2. **`poll 3` → `poll 2`**: Using `poll 2` (4-second intervals) would halve the wait:
+   ```
+   refclock PHC /dev/ptp_hyperv poll 2 dpoll -2 offset 0
+   ```
+   Expected wait: ~12s instead of ~24s.
+
+3. **Combined tuning** for maximum speed:
+   ```
+   refclock PHC /dev/ptp_hyperv poll 2 dpoll -4 offset 0 minsamples 1
+   ```
+   Expected wait: ~4-8s.
+
+4. **Remove chrony-wait from kubelet critical path** (most impactful, ~24s savings):
+   On the second boot, the clock was synced during boot 1 and the drift during a 10-15s
+   reboot is negligible. The `chrony-wait` blocking kubelet startup is overly conservative.
+   A MachineConfig dropping a systemd override could remove the dependency:
+   ```
+   [Unit]
+   # Override to not block kubelet on chrony-wait
+   Before=
+   ```
+
+## Saved Artifacts (4.18)
+- `node-journal-4.18-d4s-v3.log`, `node-journal-4.18-d4s-v5.log`, `node-journal-4.18-d4s-v6.log`
+- `node-systemd-blame-4.18-d4s-v3.txt`, `node-systemd-blame-4.18-d4s-v5.txt`, `node-systemd-blame-4.18-d4s-v6.txt`
+- `new-machine-4.18-v3-final.yaml`, `new-machine-4.18-v5-final.yaml`, `new-machine-4.18-v6-final.yaml`
+- `new-node-4.18-v3.yaml`, `new-node-4.18-v5.yaml`, `new-node-4.18-v6.yaml`
+- `node-images-4.18-d4s-v3.txt`, `node-images-4.18-d4s-v5.txt`, `node-images-4.18-d4s-v6.txt`
+- `chrony-conf-4.18.txt` — Base chrony.conf
+- `chrony-platform-conf-4.18.txt` — Azure platform chrony override
+- `chrony-wait-unit-4.18.txt` — chrony-wait systemd unit
+- `chrony-platform-config-unit-4.18.txt` — Platform config service unit
+- `chrony-platform-config-script-4.18.sh` — Platform config script
+- `machineset-4.18-v3.json`, `machineset-4.18-v5.json`, `machineset-4.18-v6.json`

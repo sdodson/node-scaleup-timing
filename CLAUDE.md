@@ -8,7 +8,8 @@ This project measures and analyzes OpenShift node scale-up time on Azure and AWS
 README.md          — summary of findings and optimization opportunities
 CLAUDE.md          — this file (project conventions and workflow)
 manifests/         — MachineConfig manifests for optimization testing
-reports/           — all collected data, analysis reports, and comparison documents
+reports/           — analysis reports (.md) and text artifacts (.txt)
+data/              — raw artifacts (YAML, JSON, logs, SVGs) — gitignored
 ```
 
 ## Workflow
@@ -33,18 +34,18 @@ reports/           — all collected data, analysis reports, and comparison docu
 
 ## Artifacts Collected Per Test
 
-All artifacts are stored in `reports/`. For each VM type test (e.g. `d4s-v5` or `4.21-m8a`):
-- `node-journal-{suffix}.log` — full journalctl from the node (all boots)
-- `node-boot-list-{suffix}.txt` — `journalctl --list-boots`
-- `node-systemd-analyze-{suffix}.txt` — `systemd-analyze` output (boot 2)
-- `node-systemd-blame-{suffix}.txt` — `systemd-analyze blame`
-- `node-systemd-critical-chain-{suffix}.txt` — `systemd-analyze critical-chain`
-- `new-machine-{suffix}-final.yaml` — Machine object YAML
-- `new-node-{suffix}.yaml` — Node object YAML
-- `csr-list-{suffix}.txt` — CSR list
-- `node-images-{suffix}.txt` — container images on the node
-- `machineset-{suffix}.json` — MachineSet definition used
-- `scale-up-analysis-{suffix}.md` — final analysis report
+Text artifacts (`.txt`) and analysis reports (`.md`) are in `reports/`. Raw data files (`.yaml`, `.json`, `.log`, `.svg`) are in `data/` (gitignored). For each VM type test (e.g. `d4s-v5` or `4.21-m8a`):
+- `data/node-journal-{suffix}.log` — full journalctl from the node (all boots)
+- `reports/node-boot-list-{suffix}.txt` — `journalctl --list-boots`
+- `reports/node-systemd-analyze-{suffix}.txt` — `systemd-analyze` output (boot 2)
+- `reports/node-systemd-blame-{suffix}.txt` — `systemd-analyze blame`
+- `reports/node-systemd-critical-chain-{suffix}.txt` — `systemd-analyze critical-chain`
+- `data/new-machine-{suffix}-final.yaml` — Machine object YAML
+- `data/new-node-{suffix}.yaml` — Node object YAML
+- `reports/csr-list-{suffix}.txt` — CSR list
+- `reports/node-images-{suffix}.txt` — container images on the node
+- `data/machineset-{suffix}.json` — MachineSet definition used
+- `reports/scale-up-analysis-{suffix}.md` — final analysis report
 
 ## Naming Conventions
 
@@ -68,7 +69,7 @@ oc get $BASE_MS -n openshift-machine-api -o json | jq '
   .spec.template.metadata.labels["machine.openshift.io/cluster-api-machineset"] = .metadata.name |
   .spec.replicas = 1 |
   .spec.template.spec.providerSpec.value.vmSize = "Standard_D4s_v6"
-' > reports/machineset-v6.json
+' > data/machineset-v6.json
 
 # AWS example (use instanceType instead of vmSize)
 oc get $BASE_MS -n openshift-machine-api -o json | jq '
@@ -78,9 +79,9 @@ oc get $BASE_MS -n openshift-machine-api -o json | jq '
   .spec.template.metadata.labels["machine.openshift.io/cluster-api-machineset"] = .metadata.name |
   .spec.replicas = 1 |
   .spec.template.spec.providerSpec.value.instanceType = "m8a.xlarge"
-' > reports/machineset-4.21-m8a.json
+' > data/machineset-4.21-m8a.json
 
-oc create -f reports/machineset-4.21-m8a.json
+oc create -f data/machineset-4.21-m8a.json
 ```
 
 ## Collecting Artifacts from a Node
@@ -88,28 +89,27 @@ oc create -f reports/machineset-4.21-m8a.json
 ```bash
 NODE=<node-name>
 SUFFIX=4.21-m8a
-DIR=reports
 
-# Journal (all boots)
-oc debug node/$NODE -- chroot /host journalctl --no-pager > $DIR/node-journal-$SUFFIX.log
+# Journal (all boots) — data/ (gitignored)
+oc debug node/$NODE -- chroot /host journalctl --no-pager > data/node-journal-$SUFFIX.log
 
 # Boot list
-oc debug node/$NODE -- chroot /host journalctl --list-boots > $DIR/node-boot-list-$SUFFIX.txt
+oc debug node/$NODE -- chroot /host journalctl --list-boots > reports/node-boot-list-$SUFFIX.txt
 
 # systemd-analyze (runs against current boot = boot 2)
-oc debug node/$NODE -- chroot /host systemd-analyze > $DIR/node-systemd-analyze-$SUFFIX.txt
-oc debug node/$NODE -- chroot /host systemd-analyze blame > $DIR/node-systemd-blame-$SUFFIX.txt
-oc debug node/$NODE -- chroot /host systemd-analyze critical-chain > $DIR/node-systemd-critical-chain-$SUFFIX.txt
+oc debug node/$NODE -- chroot /host systemd-analyze > reports/node-systemd-analyze-$SUFFIX.txt
+oc debug node/$NODE -- chroot /host systemd-analyze blame > reports/node-systemd-blame-$SUFFIX.txt
+oc debug node/$NODE -- chroot /host systemd-analyze critical-chain > reports/node-systemd-critical-chain-$SUFFIX.txt
 
-# Machine and Node objects
-oc get machine <machine-name> -n openshift-machine-api -o yaml > $DIR/new-machine-$SUFFIX-final.yaml
-oc get node $NODE -o yaml > $DIR/new-node-$SUFFIX.yaml
+# Machine and Node objects — data/ (gitignored, may contain secrets)
+oc get machine <machine-name> -n openshift-machine-api -o yaml > data/new-machine-$SUFFIX-final.yaml
+oc get node $NODE -o yaml > data/new-node-$SUFFIX.yaml
 
 # CSRs
-oc get csr > $DIR/csr-list-$SUFFIX.txt
+oc get csr > reports/csr-list-$SUFFIX.txt
 
 # Images on node
-oc debug node/$NODE -- chroot /host crictl images > $DIR/node-images-$SUFFIX.txt
+oc debug node/$NODE -- chroot /host crictl images > reports/node-images-$SUFFIX.txt
 ```
 
 ## Known Bottlenecks

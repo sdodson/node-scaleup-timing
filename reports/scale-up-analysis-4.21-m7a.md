@@ -19,7 +19,7 @@
 | **AWS Instance Provisioning** | 02:33:16 | 02:33:41 | ~25s | VM launch + first kernel |
 | **Boot 1: Kernel + Ignition (all stages)** | 02:33:41 | 02:33:51 | ~10s | Ignition fetch, write files |
 | **Boot 1: Pivot to real root** | 02:33:51 | 02:34:17 | ~26s | sysroot transition, systemd init |
-| **Boot 1: MCD pull + rpm-ostree rebase** | 02:34:17 | 02:35:46 | ~1m29s | MCD image pull (10s), rpm-ostree rebase, **LARGEST PHASE** |
+| **Boot 1: MCD pull + rpm-ostree rebase** | 02:34:17 | 02:35:46 | ~1m 29sec | MCD image pull (10s), rpm-ostree rebase, **LARGEST PHASE** |
 | **Boot 1: Reboot** | 02:35:46 | 02:36:25 | ~39s | Shutdown (16s) + POST/bootloader (23s) |
 | **Boot 2: Kernel + initrd** | 02:36:25 | 02:36:32 | ~7s | Second boot startup |
 | **Boot 2: chrony-wait** | 02:36:32 | 02:36:45 | ~13s | NTP time sync (AWS time service) |
@@ -32,7 +32,7 @@
 |----------|----------|------------|
 | AWS Instance Provisioning | ~25s | 10% |
 | Boot 1: Ignition + Pivot | ~36s | 14% |
-| Boot 1: MCD Firstboot (rpm-ostree) | **~1m29s** | **34%** |
+| Boot 1: MCD Firstboot (rpm-ostree) | **~1m 29sec** | **34%** |
 | Reboot (shutdown + POST) | ~39s | 15% |
 | Boot 2: Kernel/initrd | ~7s | 3% |
 | Boot 2: chrony-wait (NTP sync) | ~13s | 5% |

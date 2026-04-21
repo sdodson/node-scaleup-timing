@@ -1,0 +1,20 @@
+apiVersion: config.openshift.io/v1
+kind: ImageDigestMirrorSet
+metadata:
+  creationTimestamp: "2026-04-22T15:15:35Z"
+  generation: 1
+  name: image-digest-mirror
+  resourceVersion: "1123"
+  uid: 3a8a3271-8270-4b59-b06d-ab9e246803d6
+spec:
+  imageDigestMirrors:
+  - mirrors:
+    - arosvc.azurecr.io/openshift-release-dev/ocp-release
+    source: quay.io/openshift-release-dev/ocp-release
+  - mirrors:
+    - arosvc.azurecr.io/openshift-release-dev/ocp-release-nightly
+    source: quay.io/openshift-release-dev/ocp-release-nightly
+  - mirrors:
+    - arosvc.azurecr.io/openshift-release-dev/ocp-v4.0-art-dev
+    source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
+status: {}

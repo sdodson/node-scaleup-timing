@@ -19,7 +19,7 @@
 | **AWS Instance Provisioning** | 02:38:33 | 02:38:53 | ~20s | VM launch + first kernel |
 | **Boot 1: Kernel + Ignition (all stages)** | 02:38:53 | 02:39:03 | ~10s | Ignition fetch, write files |
 | **Boot 1: Pivot to real root** | 02:39:03 | 02:39:27 | ~24s | sysroot transition, systemd init |
-| **Boot 1: MCD pull + rpm-ostree rebase** | 02:39:27 | 02:40:37 | ~1m10s | MCD image pull (8s), rpm-ostree rebase, **LARGEST PHASE** |
+| **Boot 1: MCD pull + rpm-ostree rebase** | 02:39:27 | 02:40:37 | ~1m 10sec | MCD image pull (8s), rpm-ostree rebase, **LARGEST PHASE** |
 | **Boot 1: Reboot** | 02:40:37 | 02:41:09 | ~32s | Shutdown (14s) + POST/bootloader (18s) |
 | **Boot 2: Kernel + initrd** | 02:41:09 | 02:41:14 | ~5s | Second boot startup |
 | **Boot 2: chrony-wait** | 02:41:14 | 02:41:27 | ~13s | NTP time sync (AWS time service) |
@@ -32,7 +32,7 @@
 |----------|----------|------------|
 | AWS Instance Provisioning | ~20s | 9% |
 | Boot 1: Ignition + Pivot | ~34s | 16% |
-| Boot 1: MCD Firstboot (rpm-ostree) | **~1m10s** | **33%** |
+| Boot 1: MCD Firstboot (rpm-ostree) | **~1m 10sec** | **33%** |
 | Reboot (shutdown + POST) | ~32s | 15% |
 | Boot 2: Kernel/initrd | ~5s | 2% |
 | Boot 2: chrony-wait (NTP sync) | ~13s | 6% |
@@ -77,10 +77,10 @@ graphical.target @17.913s
 
 | Metric | m6a.xlarge | m7a.xlarge | m8a.xlarge |
 |--------|-----------|-----------|-----------|
-| **Total time** | **4m 26s** | **4m 19s** | **3m 32s** |
+| **Total time** | **4m 26sec** | **4m 19sec** | **3m 32sec** |
 | AWS Instance Provisioning | 23s | 25s | 20s |
 | Boot 1 (Ignition + pivot) | 37s | 36s | 34s |
-| MCD firstboot (rpm-ostree) | 1m 33s | 1m 29s | 1m 10s |
+| MCD firstboot (rpm-ostree) | 1m 33sec | 1m 29sec | 1m 10sec |
 | Reboot | 35s | 39s | 32s |
 | Boot 2 kernel/initrd | 7s | 7s | 5s |
 | chrony-wait | 14s | 13s | 13s |

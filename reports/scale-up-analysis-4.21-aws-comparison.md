@@ -16,9 +16,9 @@
 
 | Instance Type | CPU Gen | Total Time |
 |--------------|---------|------------|
-| **m6a.xlarge** | AMD EPYC 3rd Gen | **4m 26s** |
-| **m7a.xlarge** | AMD EPYC 4th Gen | **4m 19s** |
-| **m8a.xlarge** | AMD EPYC 5th Gen | **3m 32s** |
+| **m6a.xlarge** | AMD EPYC 3rd Gen | **4m 26sec** |
+| **m7a.xlarge** | AMD EPYC 4th Gen | **4m 19sec** |
+| **m8a.xlarge** | AMD EPYC 5th Gen | **3m 32sec** |
 
 ## Detailed Phase Comparison
 
@@ -27,7 +27,7 @@
 | AWS Instance Provisioning | 23s | 25s | 20s |
 | Boot 1: Ignition (all stages) | 11s | 10s | 10s |
 | Boot 1: Pivot to real root | 26s | 26s | 24s |
-| Boot 1: MCD pull + rpm-ostree | **1m 33s** | **1m 29s** | **1m 10s** |
+| Boot 1: MCD pull + rpm-ostree | **1m 33sec** | **1m 29sec** | **1m 10sec** |
 | Reboot (shutdown + POST) | 35s | 39s | 32s |
 | Boot 2: Kernel + initrd | 7s | 7s | 5s |
 | Boot 2: chrony-wait | 14s | 13s | 13s |
@@ -48,8 +48,8 @@
 
 ### 1. m8a is 20% faster than m6a overall
 
-Moving from m6a to m8a saves 54 seconds (4m26s -> 3m32s). The improvement comes from:
-- MCD firstboot: 23s faster (1m33s -> 1m10s) — faster NVMe I/O for rpm-ostree rebase
+Moving from m6a to m8a saves 54 seconds (4m 26sec -> 3m 32sec). The improvement comes from:
+- MCD firstboot: 23s faster (1m 33sec -> 1m 10sec) — faster NVMe I/O for rpm-ostree rebase
 - Kubelet to NodeReady: 20s faster (55s -> 35s) — faster container image pulls and pod startup
 - Boot 2 kernel/initrd: 2s faster (7s -> 5s) — faster CPU initialization
 - Reboot: 3s faster (35s -> 32s) — faster shutdown/POST
@@ -80,12 +80,12 @@ The Ignition phase (~10-11s) and pivot to real root (~24-26s) are essentially th
 |-------|---------------|--------------------------|-------|
 | VM Provisioning | 20s | 18s | Similar |
 | Ignition + Pivot | 34s | 15s | AWS pivot is slower |
-| MCD firstboot | 1m 10s | 2m 09s | **AWS is 59s faster** |
+| MCD firstboot | 1m 10sec | 2m 09sec | **AWS is 59s faster** |
 | Reboot | 32s | 11s | Azure is faster |
 | chrony-wait | 13s | 24s | **AWS is 11s faster** |
 | Boot 2 systemd total | 22.7s | 31.7s | AWS is faster |
 | Kubelet -> NodeReady | 35s | 62s | **AWS is 27s faster** |
-| **Total** | **3m 32s** | **3m 59s** | **AWS is 27s faster** |
+| **Total** | **3m 32sec** | **3m 59sec** | **AWS is 27s faster** |
 
 Key differences:
 - **AWS MCD firstboot is much faster** — likely faster network throughput to container registries from us-west-2

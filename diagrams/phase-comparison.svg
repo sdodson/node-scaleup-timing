@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f9fa"/>
+      <stop offset="100%" style="stop-color:#e9ecef"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="380" rx="8" fill="url(#bg3)"/>
+  <text x="450" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#212529">Phase Breakdown: vCPU Count vs VM Generation (Azure, zone averages)</text>
+  <text x="450" y="46" text-anchor="middle" font-size="10" fill="#868e96">Stacked bar = total scale-up time. Each segment = one boot phase.</text>
+
+  <!-- Y-axis labels -->
+  <text x="115" y="100" text-anchor="end" font-size="11" fill="#212529" font-weight="bold">D4s_v3</text>
+  <text x="115" y="113" text-anchor="end" font-size="9" fill="#868e96">4 vCPU, v3</text>
+
+  <text x="115" y="165" text-anchor="end" font-size="11" fill="#212529" font-weight="bold">D32s_v3</text>
+  <text x="115" y="178" text-anchor="end" font-size="9" fill="#868e96">32 vCPU, v3</text>
+
+  <text x="115" y="230" text-anchor="end" font-size="11" fill="#212529" font-weight="bold">D4s_v5</text>
+  <text x="115" y="243" text-anchor="end" font-size="9" fill="#868e96">4 vCPU, v5</text>
+
+  <text x="115" y="295" text-anchor="end" font-size="11" fill="#212529" font-weight="bold">D32s_v5</text>
+  <text x="115" y="308" text-anchor="end" font-size="9" fill="#868e96">32 vCPU, v5</text>
+
+  <!-- Scale: 1s = 1.5px, max ~470s => 705px, starts at x=125 -->
+  <!-- D4s_v3: total 423s = 7m 03sec -->
+  <!-- VM Prov: 32s, Ignition+Pivot: 29s, MCD: 164s, Reboot: 26s, chrony: 24s, CRI-O+KL: 1s, KL->Ready: 134s, other: 13s -->
+  <rect x="125" y="88" width="48" height="30" rx="2" fill="#4263eb" opacity="0.85"/>
+  <rect x="173" y="88" width="44" height="30" rx="2" fill="#7048e8" opacity="0.85"/>
+  <rect x="217" y="88" width="246" height="30" rx="2" fill="#e03131" opacity="0.85"/>
+  <rect x="463" y="88" width="39" height="30" rx="2" fill="#495057" opacity="0.85"/>
+  <rect x="502" y="88" width="36" height="30" rx="2" fill="#f08c00" opacity="0.85"/>
+  <rect x="538" y="88" width="2" height="30" rx="1" fill="#2b8a3e" opacity="0.85"/>
+  <rect x="540" y="88" width="101" height="30" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="648" y="108" font-size="11" font-weight="bold" fill="#212529">7m 03sec</text>
+
+  <!-- D32s_v3 avg: total 391s -->
+  <!-- VM Prov: 65s, Ign+Pivot: 35s, MCD: 160s, Reboot: 26s, chrony: 24s, CRI-O+KL: 3s, KL->Ready: 60s, other: 18s -->
+  <rect x="125" y="153" width="98" height="30" rx="2" fill="#4263eb" opacity="0.85"/>
+  <rect x="223" y="153" width="53" height="30" rx="2" fill="#7048e8" opacity="0.85"/>
+  <rect x="276" y="153" width="240" height="30" rx="2" fill="#e03131" opacity="0.85"/>
+  <rect x="516" y="153" width="39" height="30" rx="2" fill="#495057" opacity="0.85"/>
+  <rect x="555" y="153" width="36" height="30" rx="2" fill="#f08c00" opacity="0.85"/>
+  <rect x="591" y="153" width="5" height="30" rx="1" fill="#2b8a3e" opacity="0.85"/>
+  <rect x="596" y="153" width="90" height="30" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="693" y="173" font-size="11" font-weight="bold" fill="#212529">6m 31sec</text>
+
+  <!-- D4s_v5: total 283s = 4m 43sec -->
+  <!-- VM Prov: 19s, Ign+Pivot: 23s, MCD: 133s, Reboot: 11s, chrony: 24s, CRI-O+KL: 1s, KL->Ready: 56s, other: 16s -->
+  <rect x="125" y="218" width="29" height="30" rx="2" fill="#4263eb" opacity="0.85"/>
+  <rect x="154" y="218" width="35" height="30" rx="2" fill="#7048e8" opacity="0.85"/>
+  <rect x="189" y="218" width="200" height="30" rx="2" fill="#e03131" opacity="0.85"/>
+  <rect x="389" y="218" width="17" height="30" rx="2" fill="#495057" opacity="0.85"/>
+  <rect x="406" y="218" width="36" height="30" rx="2" fill="#f08c00" opacity="0.85"/>
+  <rect x="442" y="218" width="2" height="30" rx="1" fill="#2b8a3e" opacity="0.85"/>
+  <rect x="444" y="218" width="84" height="30" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="535" y="238" font-size="11" font-weight="bold" fill="#212529">4m 43sec</text>
+
+  <!-- D32s_v5 avg: total 297s = 4m 57sec -->
+  <!-- VM Prov: 43s, Ign+Pivot: 28s, MCD: 123s, Reboot: 14s, chrony: 24s, CRI-O+KL: 2s, KL->Ready: 50s, other: 13s -->
+  <rect x="125" y="283" width="65" height="30" rx="2" fill="#4263eb" opacity="0.85"/>
+  <rect x="190" y="283" width="42" height="30" rx="2" fill="#7048e8" opacity="0.85"/>
+  <rect x="232" y="283" width="185" height="30" rx="2" fill="#e03131" opacity="0.85"/>
+  <rect x="417" y="283" width="21" height="30" rx="2" fill="#495057" opacity="0.85"/>
+  <rect x="438" y="283" width="36" height="30" rx="2" fill="#f08c00" opacity="0.85"/>
+  <rect x="474" y="283" width="3" height="30" rx="1" fill="#2b8a3e" opacity="0.85"/>
+  <rect x="477" y="283" width="75" height="30" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="559" y="303" font-size="11" font-weight="bold" fill="#212529">4m 57sec</text>
+
+  <!-- Legend -->
+  <line x1="125" y1="335" x2="860" y2="335" stroke="#dee2e6" stroke-width="1"/>
+  <rect x="125" y="348" width="12" height="12" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="142" y="358" font-size="9" fill="#495057">VM Provision</text>
+  <rect x="215" y="348" width="12" height="12" rx="2" fill="#7048e8" opacity="0.85"/>
+  <text x="232" y="358" font-size="9" fill="#495057">Ignition+Pivot</text>
+  <rect x="310" y="348" width="12" height="12" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="327" y="358" font-size="9" fill="#495057">MCD Firstboot</text>
+  <rect x="415" y="348" width="12" height="12" rx="2" fill="#495057" opacity="0.85"/>
+  <text x="432" y="358" font-size="9" fill="#495057">Reboot</text>
+  <rect x="480" y="348" width="12" height="12" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="497" y="358" font-size="9" fill="#495057">chrony-wait</text>
+  <rect x="570" y="348" width="12" height="12" rx="2" fill="#2b8a3e" opacity="0.85"/>
+  <text x="587" y="358" font-size="9" fill="#495057">CRI-O+Kubelet</text>
+  <rect x="665" y="348" width="12" height="12" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="682" y="358" font-size="9" fill="#495057">Kubelet->NodeReady</text>
+</svg>

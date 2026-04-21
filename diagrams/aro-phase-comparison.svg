@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 400" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bg-aro-phase" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f9fa"/>
+      <stop offset="100%" style="stop-color:#e9ecef"/>
+    </linearGradient>
+  </defs>
+  <rect width="1100" height="400" rx="8" fill="url(#bg-aro-phase)"/>
+  <text x="550" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#212529">Phase Comparison: ARO vs Standalone OCP (D4s_v5)</text>
+  <text x="550" y="46" text-anchor="middle" font-size="10" fill="#868e96">Stacked bar chart showing time spent in each boot phase</text>
+
+  <!-- Y-axis -->
+  <text x="18" y="210" text-anchor="middle" font-size="11" fill="#495057" transform="rotate(-90, 18, 210)">Time (seconds)</text>
+
+  <!-- Y-axis ticks: 0-350, scale = 0.8px/s, origin at y=355 -->
+  <line x1="55" y1="355" x2="60" y2="355" stroke="#495057"/><text x="50" y="359" text-anchor="end" font-size="9" fill="#495057">0</text>
+  <line x1="55" y1="275" x2="60" y2="275" stroke="#495057"/><text x="50" y="279" text-anchor="end" font-size="9" fill="#495057">100</text>
+  <line x1="55" y1="195" x2="60" y2="195" stroke="#495057"/><text x="50" y="199" text-anchor="end" font-size="9" fill="#495057">200</text>
+  <line x1="55" y1="115" x2="60" y2="115" stroke="#495057"/><text x="50" y="119" text-anchor="end" font-size="9" fill="#495057">300</text>
+  <line x1="60" y1="355" x2="60" y2="60" stroke="#495057" stroke-width="1"/>
+
+  <!-- Grid lines -->
+  <line x1="60" y1="275" x2="1040" y2="275" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="60" y1="195" x2="1040" y2="195" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="60" y1="115" x2="1040" y2="115" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+
+  <!-- Bar 1: ARO eastus2 (284s total) -->
+  <!-- VM Prov: 19s, Boot1: 160s, Reboot: 6s, chrony: 24s, other systemd: 7s, KTR: 68s -->
+  <!-- x=95, width=140 -->
+  <!-- VM Prov: 19*0.8=15.2px from y=355 -->
+  <rect x="95" y="340" width="140" height="15" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="165" y="351" text-anchor="middle" font-size="8" fill="white">VM 19s</text>
+  <!-- Boot1: 160*0.8=128px -->
+  <rect x="95" y="212" width="140" height="128" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="165" y="282" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Boot 1: 160s</text>
+  <!-- Reboot: 6*0.8=4.8px -->
+  <rect x="95" y="207" width="140" height="5" rx="1" fill="#495057" opacity="0.85"/>
+  <!-- chrony: 24*0.8=19.2px -->
+  <rect x="95" y="188" width="140" height="19" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="165" y="201" text-anchor="middle" font-size="8" fill="white">chrony 24s</text>
+  <!-- other systemd: 7*0.8=5.6px -->
+  <rect x="95" y="182" width="140" height="6" rx="1" fill="#2b8a3e" opacity="0.6"/>
+  <!-- KTR: 68*0.8=54.4px -->
+  <rect x="95" y="128" width="140" height="54" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="165" y="159" text-anchor="middle" font-size="10" fill="white" font-weight="bold">KTR: 68s</text>
+  <!-- Total label -->
+  <text x="165" y="121" text-anchor="middle" font-size="12" font-weight="bold" fill="#212529">284s</text>
+  <text x="165" y="373" text-anchor="middle" font-size="11" fill="#495057" font-weight="bold">ARO eastus2</text>
+  <text x="165" y="387" text-anchor="middle" font-size="9" fill="#868e96">4.20.15 (n=26)</text>
+
+  <!-- Bar 2: ARO brazilsouth (335s total) -->
+  <!-- VM Prov: 22s, Boot1: 199s, Reboot: 6s, chrony: 24s, other systemd: 4s, KTR: 76s -->
+  <!-- x=310, width=140 -->
+  <rect x="310" y="337" width="140" height="18" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="380" y="350" text-anchor="middle" font-size="8" fill="white">VM 22s</text>
+  <rect x="310" y="178" width="140" height="159" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="380" y="263" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Boot 1: 199s</text>
+  <rect x="310" y="173" width="140" height="5" rx="1" fill="#495057" opacity="0.85"/>
+  <rect x="310" y="154" width="140" height="19" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="380" y="167" text-anchor="middle" font-size="8" fill="white">chrony 24s</text>
+  <rect x="310" y="151" width="140" height="3" rx="1" fill="#2b8a3e" opacity="0.6"/>
+  <rect x="310" y="90" width="140" height="61" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="380" y="125" text-anchor="middle" font-size="10" fill="white" font-weight="bold">KTR: 76s</text>
+  <text x="380" y="83" text-anchor="middle" font-size="12" font-weight="bold" fill="#212529">335s</text>
+  <text x="380" y="373" text-anchor="middle" font-size="11" fill="#495057" font-weight="bold">ARO brazilsouth</text>
+  <text x="380" y="387" text-anchor="middle" font-size="9" fill="#868e96">4.20.15 (n=30)</text>
+
+  <!-- Bar 3: Standalone eastus2 4.20 (294s total) -->
+  <!-- VM Prov: 40s, Boot1: 157s, Reboot: 6s, chrony: 24s, other: 10s, KTR: 56s -->
+  <!-- x=525, width=140 -->
+  <rect x="525" y="323" width="140" height="32" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="595" y="343" text-anchor="middle" font-size="9" fill="white">VM 40s</text>
+  <rect x="525" y="197" width="140" height="126" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="595" y="267" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Boot 1: 157s</text>
+  <rect x="525" y="192" width="140" height="5" rx="1" fill="#495057" opacity="0.85"/>
+  <rect x="525" y="173" width="140" height="19" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="595" y="186" text-anchor="middle" font-size="8" fill="white">chrony 24s</text>
+  <rect x="525" y="165" width="140" height="8" rx="1" fill="#2b8a3e" opacity="0.6"/>
+  <rect x="525" y="120" width="140" height="45" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="595" y="147" text-anchor="middle" font-size="10" fill="white" font-weight="bold">KTR: 56s</text>
+  <text x="595" y="113" text-anchor="middle" font-size="12" font-weight="bold" fill="#212529">294s</text>
+  <text x="595" y="373" text-anchor="middle" font-size="11" fill="#495057" font-weight="bold">Standalone eastus2</text>
+  <text x="595" y="387" text-anchor="middle" font-size="9" fill="#868e96">4.20 (n=24)</text>
+
+  <!-- Bar 4: Standalone eastus 4.22 (247s total) -->
+  <!-- VM Prov: 21s, Boot1: 128s, Reboot: 5s, chrony: 24s, other: 8s, KTR: 61s -->
+  <!-- x=740, width=140 -->
+  <rect x="740" y="338" width="140" height="17" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="810" y="351" text-anchor="middle" font-size="8" fill="white">VM 21s</text>
+  <rect x="740" y="236" width="140" height="102" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="810" y="293" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Boot 1: 128s</text>
+  <rect x="740" y="232" width="140" height="4" rx="1" fill="#495057" opacity="0.85"/>
+  <rect x="740" y="213" width="140" height="19" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="810" y="226" text-anchor="middle" font-size="8" fill="white">chrony 24s</text>
+  <rect x="740" y="206" width="140" height="7" rx="1" fill="#2b8a3e" opacity="0.6"/>
+  <rect x="740" y="157" width="140" height="49" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="810" y="186" text-anchor="middle" font-size="10" fill="white" font-weight="bold">KTR: 61s</text>
+  <text x="810" y="150" text-anchor="middle" font-size="12" font-weight="bold" fill="#212529">247s</text>
+  <text x="810" y="373" text-anchor="middle" font-size="11" fill="#495057" font-weight="bold">Standalone eastus</text>
+  <text x="810" y="387" text-anchor="middle" font-size="9" fill="#868e96">4.22 (n=12)</text>
+
+  <!-- Legend -->
+  <rect x="920" y="120" width="12" height="12" rx="2" fill="#4263eb" opacity="0.85"/>
+  <text x="937" y="131" font-size="9" fill="#495057">VM Provisioning</text>
+  <rect x="920" y="140" width="12" height="12" rx="2" fill="#e03131" opacity="0.85"/>
+  <text x="937" y="151" font-size="9" fill="#495057">Boot 1 (MCD)</text>
+  <rect x="920" y="160" width="12" height="12" rx="2" fill="#495057" opacity="0.85"/>
+  <text x="937" y="171" font-size="9" fill="#495057">Reboot</text>
+  <rect x="920" y="180" width="12" height="12" rx="2" fill="#f08c00" opacity="0.85"/>
+  <text x="937" y="191" font-size="9" fill="#495057">chrony-wait</text>
+  <rect x="920" y="200" width="12" height="12" rx="2" fill="#2b8a3e" opacity="0.6"/>
+  <text x="937" y="211" font-size="9" fill="#495057">Other systemd</text>
+  <rect x="920" y="220" width="12" height="12" rx="2" fill="#1971c2" opacity="0.85"/>
+  <text x="937" y="231" font-size="9" fill="#495057">KTR</text>
+</svg>

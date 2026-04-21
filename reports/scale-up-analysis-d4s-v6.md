@@ -19,13 +19,13 @@
 | **Azure VM Provisioning** | 20:09:02 | 20:09:20 | ~18s | VM creating in Azure |
 | **Boot 1: Kernel -> Ignition (all stages)** | 20:09:20 | 20:09:30 | ~10s | All Ignition stages |
 | **Boot 1: Pivot to real root** | 20:09:30 | 20:09:36 | ~6s | sysroot transition |
-| **Boot 1: MCD pull + rpm-ostree rebase** | 20:09:36 | 20:11:16 | ~1m40s | **LARGEST PHASE** |
+| **Boot 1: MCD pull + rpm-ostree rebase** | 20:09:36 | 20:11:16 | ~1m 40sec | **LARGEST PHASE** |
 | **Boot 1: Reboot** | 20:11:16 | 20:11:29 | ~13s | Shutdown + BIOS/bootloader |
 | **Boot 2: Kernel + initrd** | 20:11:29 | 20:11:34 | ~5s | Second boot |
 | **Boot 2: chrony-wait** | 20:11:34 | 20:11:58 | ~24s | NTP time sync |
 | **Boot 2: OVS configuration** | 20:11:34 | 20:11:37 | ~3s | OVS setup (parallel with chrony) |
 | **Boot 2: CRI-O + Kubelet start** | 20:11:58 | 20:11:59 | ~1s | Container runtime + kubelet |
-| **Boot 2: Kubelet -> NodeReady** | 20:11:59 | 20:13:01 | ~1m2s | CSR, CNI, node registration |
+| **Boot 2: Kubelet -> NodeReady** | 20:11:59 | 20:13:01 | ~1m 2sec | CSR, CNI, node registration |
 
 ## Time Spent Summary
 
@@ -33,13 +33,13 @@
 |----------|----------|------------|
 | Azure VM Provisioning | ~18s | 8% |
 | Boot 1: Ignition + OS Setup | ~16s | 7% |
-| Boot 1: MCD Firstboot (rpm-ostree) | **~1m40s** | **42%** |
+| Boot 1: MCD Firstboot (rpm-ostree) | **~1m 40sec** | **42%** |
 | Reboot (shutdown + POST) | ~13s | 5% |
 | Boot 2: Kernel/initrd | ~5s | 2% |
 | Boot 2: chrony-wait (NTP sync) | ~24s | 10% |
 | Boot 2: OVS configuration | ~3s | 1% |
 | Boot 2: CRI-O + Kubelet start | ~1s | <1% |
-| Boot 2: Kubelet to NodeReady | **~1m2s** | **26%** |
+| Boot 2: Kubelet to NodeReady | **~1m 2sec** | **26%** |
 
 ## MCD Firstboot Detail
 - MCD image pull: 20:09:37 -> 20:09:45 (~8s)
@@ -77,24 +77,24 @@ graphical.target @26.771s
 
 | Metric | Standard_D4s_v3 | Standard_D4s_v5 | Standard_D4s_v6 |
 |--------|----------------|----------------|----------------|
-| **Total time** | **7m 3s** | **4m 43s** | **3m 59s** |
+| **Total time** | **7m 3sec** | **4m 43sec** | **3m 59sec** |
 | Azure VM Provisioning | 32s | 19s | 18s |
 | Boot 1: Ignition + pivot | 29s | 23s | 16s |
-| MCD firstboot (rpm-ostree) | 2m 44s | 2m 13s | **1m 40s** |
+| MCD firstboot (rpm-ostree) | 2m 44sec | 2m 13sec | **1m 40sec** |
 | rpm-ostree rebase (subset) | ~120s | ~89s | **~50s** |
 | Reboot (shutdown + POST) | 26s | 11s | 13s |
 | Boot 2: Kernel/initrd | 12s | 9s | 5s |
 | chrony-wait | 24s | 24s | 24s |
 | OVS configuration | 14s | 5s | 3s |
 | CRI-O + Kubelet start | 1s | 1s | 1s |
-| Kubelet to NodeReady | 2m 14s | 56s | 1m 2s |
+| Kubelet to NodeReady | 2m 14sec | 56s | 1m 2sec |
 | **systemd-analyze total** | **40.9s** | **31.7s** | **31.7s** |
 
 ### Key Observations
 
 1. **v6 is the fastest overall at ~4 minutes** — a 44% improvement over v3.
 
-2. **MCD firstboot is dramatically faster on v6** (1m40s vs 2m44s on v3). The rpm-ostree
+2. **MCD firstboot is dramatically faster on v6** (1m 40sec vs 2m 44sec on v3). The rpm-ostree
    rebase itself dropped from ~120s (v3) to ~50s (v6) — a 58% improvement in the single
    largest phase. This is primarily due to faster NVMe-class storage I/O on the v6
    generation VMs.
@@ -114,13 +114,13 @@ graphical.target @26.771s
 ### Speedup Summary
 | From → To | Time Saved | % Faster |
 |-----------|-----------|----------|
-| v3 → v5 | 2m 20s | 33% |
-| v3 → v6 | 3m 4s | 44% |
+| v3 → v5 | 2m 20sec | 33% |
+| v3 → v6 | 3m 4sec | 44% |
 | v5 → v6 | 44s | 16% |
 
 ### Where the remaining ~4 minutes go (v6)
-1. **MCD firstboot**: 1m40s (42%) — rpm-ostree rebase is still the bottleneck
-2. **Kubelet to NodeReady**: 1m2s (26%) — CSR approval + CNI readiness
+1. **MCD firstboot**: 1m 40sec (42%) — rpm-ostree rebase is still the bottleneck
+2. **Kubelet to NodeReady**: 1m 2sec (26%) — CSR approval + CNI readiness
 3. **chrony-wait**: 24s (10%) — NTP sync
 4. **Everything else**: 53s (22%) — VM provisioning, Ignition, boot, reboot
 

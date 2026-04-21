@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bg4" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f9fa"/>
+      <stop offset="100%" style="stop-color:#e9ecef"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="440" rx="8" fill="url(#bg4)"/>
+  <text x="450" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#212529">Scale-Up Time: 24 Samples Across 8 Rounds x 3 Zones (D4s_v5)</text>
+  <text x="450" y="46" text-anchor="middle" font-size="10" fill="#868e96">No statistically significant zonal differences (ANOVA p>0.05). All variance is run-to-run.</text>
+
+  <!-- Y-axis -->
+  <line x1="80" y1="70" x2="80" y2="370" stroke="#495057" stroke-width="1"/>
+  <text x="20" y="220" text-anchor="middle" font-size="11" fill="#495057" transform="rotate(-90, 20, 220)">Total Scale-Up Time (seconds)</text>
+
+  <!-- Y-axis ticks: range 200-450, scale: 1s = 0.75px, origin at y=370 for 200s -->
+  <!-- 200s => y=370, 250s => y=332.5, 300s => y=295, 350s => y=257.5, 400s => y=220, 450s => y=182.5 -->
+  <line x1="75" y1="370" x2="80" y2="370" stroke="#495057"/><text x="70" y="374" text-anchor="end" font-size="9" fill="#495057">200</text>
+  <line x1="75" y1="332" x2="80" y2="332" stroke="#495057"/><text x="70" y="336" text-anchor="end" font-size="9" fill="#495057">250</text>
+  <line x1="75" y1="295" x2="80" y2="295" stroke="#495057"/><text x="70" y="299" text-anchor="end" font-size="9" fill="#495057">300</text>
+  <line x1="75" y1="257" x2="80" y2="257" stroke="#495057"/><text x="70" y="261" text-anchor="end" font-size="9" fill="#495057">350</text>
+  <line x1="75" y1="220" x2="80" y2="220" stroke="#495057"/><text x="70" y="224" text-anchor="end" font-size="9" fill="#495057">400</text>
+  <line x1="75" y1="182" x2="80" y2="182" stroke="#495057"/><text x="70" y="186" text-anchor="end" font-size="9" fill="#495057">450</text>
+
+  <!-- Grid lines -->
+  <line x1="80" y1="370" x2="830" y2="370" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="80" y1="332" x2="830" y2="332" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="80" y1="295" x2="830" y2="295" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="80" y1="257" x2="830" y2="257" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="80" y1="220" x2="830" y2="220" stroke="#dee2e6" stroke-width="0.5" stroke-dasharray="4"/>
+
+  <!-- X-axis -->
+  <line x1="80" y1="370" x2="830" y2="370" stroke="#495057" stroke-width="1"/>
+
+  <!-- X-axis labels: rounds 1-8, spaced at 90px starting at 125 -->
+  <text x="125" y="388" text-anchor="middle" font-size="10" fill="#495057">R1</text>
+  <text x="215" y="388" text-anchor="middle" font-size="10" fill="#495057">R2</text>
+  <text x="305" y="388" text-anchor="middle" font-size="10" fill="#495057">R3</text>
+  <text x="395" y="388" text-anchor="middle" font-size="10" fill="#495057">R4</text>
+  <text x="485" y="388" text-anchor="middle" font-size="10" fill="#495057">R5</text>
+  <text x="575" y="388" text-anchor="middle" font-size="10" fill="#495057">R6</text>
+  <text x="665" y="388" text-anchor="middle" font-size="10" fill="#495057">R7</text>
+  <text x="755" y="388" text-anchor="middle" font-size="10" fill="#495057">R8</text>
+  <text x="450" y="405" text-anchor="middle" font-size="11" fill="#495057">Round</text>
+
+  <!-- Mean line at 293.5s => y = 370 - (293.5-200)*0.75 = 370 - 70.1 = 299.9 -->
+  <line x1="80" y1="300" x2="830" y2="300" stroke="#212529" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <text x="840" y="304" font-size="9" fill="#212529" font-weight="bold">Mean 294s</text>
+
+  <!-- +1 SD at 342.5s => y = 370 - 142.5*0.75 = 370-106.9 = 263.1 -->
+  <line x1="80" y1="263" x2="830" y2="263" stroke="#868e96" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="840" y="267" font-size="8" fill="#868e96">+1 SD</text>
+
+  <!-- -1 SD at 244.5s => y = 370 - 44.5*0.75 = 370-33.4 = 336.6 -->
+  <line x1="80" y1="337" x2="830" y2="337" stroke="#868e96" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="840" y="341" font-size="8" fill="#868e96">-1 SD</text>
+
+  <!-- Data points: y = 370 - (value - 200) * 0.75 -->
+  <!-- Zone 1 = red circles, Zone 2 = blue squares, Zone 3 = green diamonds -->
+
+  <!-- Round 1: Z1=326 y=275.5, Z2=327 y=274.75, Z3=332 y=271 -->
+  <circle cx="115" cy="276" r="6" fill="#e03131" opacity="0.8"/>
+  <rect x="121" y="269" width="12" height="12" rx="1" fill="#4263eb" opacity="0.8" transform="rotate(0,127,275)"/>
+  <polygon points="145,271 151,265 157,271 151,277" fill="#2b8a3e" opacity="0.8"/>
+
+  <!-- Round 2: Z1=321 y=279.25, Z2=341 y=264.25, Z3=356 y=253 -->
+  <circle cx="205" cy="279" r="6" fill="#e03131" opacity="0.8"/>
+  <rect x="211" y="258" width="12" height="12" rx="1" fill="#4263eb" opacity="0.8"/>
+  <polygon points="235,253 241,247 247,253 241,259" fill="#2b8a3e" opacity="0.8"/>
+
+  <!-- Round 3: Z1=285 y=306.25, Z2=279 y=310.75, Z3=304 y=292 -->
+  <circle cx="295" cy="306" r="6" fill="#e03131" opacity="0.8"/>
+  <rect x="301" y="305" width="12" height="12" rx="1" fill="#4263eb" opacity="0.8"/>
+  <polygon points="325,292 331,286 337,292 331,298" fill="#2b8a3e" opacity="0.8"/>
+
+  <!-- Round 4: Z1=293 y=300.25, Z2=239 y=340.75, Z3=306 y=290.5 -->
+  <circle cx="385" cy="300" r="6" fill="#e03131" opacity="0.8"/>
+  <rect x="391" y="335" width="12" height="12" rx="1" fill="#4263eb" opacity="0.8"/>
+  <polygon points="415,291 421,285 427,291 421,297" fill="#2b8a3e" opacity="0.8"/>
+
+  <!-- Round 5: Z1=235 y=343.75, Z2=246 y=335.5, Z3=312 y=286 -->
+  <circle cx="475" cy="344" r="6" fill="#e03131" opacity="0.8"/>
+  <rect x="481" y="330" width="12" height="12" rx="1" fill="#4263eb" opacity="0.8"/>
+  <polygon points="505,286 511,280 517,286 511,292" fill="#2b8a3e" opacity="0.8"/>
+
+  <!-- Round 6: Z1=355 y=253.75, Z2=246 y=335.5, Z3=238 y=341.5 -->
+  <circle cx="565" cy="254" r="6" fill="#e03131" opacity="0.8"/>
+  <rect x="571" y="330" width="12" height="12" rx="1" fill="#4263eb" opacity="0.8"/>
+  <polygon points="595,342 601,336 607,342 601,348" fill="#2b8a3e" opacity="0.8"/>
+
+  <!-- Round 7: Z1=315 y=283.75, Z2=239 y=340.75, Z3=243 y=337.75 -->
+  <circle cx="655" cy="284" r="6" fill="#e03131" opacity="0.8"/>
+  <rect x="661" y="335" width="12" height="12" rx="1" fill="#4263eb" opacity="0.8"/>
+  <polygon points="685,338 691,332 697,338 691,344" fill="#2b8a3e" opacity="0.8"/>
+
+  <!-- Round 8: Z1=415 y=208.75, Z2=261 y=324.25, Z3=229 y=348.25 -->
+  <circle cx="745" cy="209" r="6" fill="#e03131" opacity="0.8"/>
+  <rect x="751" y="318" width="12" height="12" rx="1" fill="#4263eb" opacity="0.8"/>
+  <polygon points="775,348 781,342 787,348 781,354" fill="#2b8a3e" opacity="0.8"/>
+
+  <!-- Legend -->
+  <line x1="80" y1="415" x2="830" y2="415" stroke="#dee2e6" stroke-width="1"/>
+  <circle cx="120" cy="430" r="5" fill="#e03131" opacity="0.8"/>
+  <text x="130" y="434" font-size="10" fill="#495057">Zone 1 (mean 318s)</text>
+  <rect x="260" y="425" width="10" height="10" rx="1" fill="#4263eb" opacity="0.8"/>
+  <text x="275" y="434" font-size="10" fill="#495057">Zone 2 (mean 272s)</text>
+  <polygon points="410,430 416,424 422,430 416,436" fill="#2b8a3e" opacity="0.8"/>
+  <text x="428" y="434" font-size="10" fill="#495057">Zone 3 (mean 290s)</text>
+  <line x1="560" y1="430" x2="590" y2="430" stroke="#212529" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <text x="596" y="434" font-size="10" fill="#495057">Overall mean</text>
+  <line x1="690" y1="430" x2="720" y2="430" stroke="#868e96" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="726" y="434" font-size="10" fill="#495057">+/- 1 SD</text>
+</svg>

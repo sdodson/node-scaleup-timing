@@ -1,4 +1,15 @@
 # Kubeconfig files contain embedded client certificates and private keys
 kubeconfig
-*.kubeconfig
+*kubeconfig
 cluster-bot-*.kubeconfig
+
+# Temporary files (scripts, scratch work)
+tmp/
+
+# Claude session artifacts
+" /"
+
+# Raw artifacts (YAML, JSON, logs, SVGs) — may contain secrets
+data/
+
+# kubeconfigs for running 

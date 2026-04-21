@@ -20,7 +20,7 @@
 | **Azure VM Provisioning** | 19:45:12 | 19:45:31 | ~19s | VM creating in Azure |
 | **Boot 1: Kernel -> Ignition (all stages)** | 19:45:31 | 19:45:49 | ~18s | All Ignition stages |
 | **Boot 1: Pivot to real root** | 19:45:49 | 19:45:54 | ~5s | sysroot transition |
-| **Boot 1: MCD pull + rpm-ostree rebase** | 19:45:54 | 19:48:07 | ~2m13s | MCD image pull, rpm-ostree rebase, **LARGEST PHASE** |
+| **Boot 1: MCD pull + rpm-ostree rebase** | 19:45:54 | 19:48:07 | ~2m 13sec | MCD image pull, rpm-ostree rebase, **LARGEST PHASE** |
 | **Boot 1: Reboot** | 19:48:07 | 19:48:18 | ~11s | Shutdown + BIOS/bootloader |
 | **Boot 2: Kernel + initrd** | 19:48:18 | 19:48:27 | ~9s | Second boot |
 | **Boot 2: chrony-wait** | 19:48:27 | 19:48:51 | ~24s | NTP time sync |
@@ -34,7 +34,7 @@
 |----------|----------|------------|
 | Azure VM Provisioning | ~19s | 7% |
 | Boot 1: Ignition + OS Setup | ~23s | 8% |
-| Boot 1: MCD Firstboot (rpm-ostree) | **~2m13s** | **47%** |
+| Boot 1: MCD Firstboot (rpm-ostree) | **~2m 13sec** | **47%** |
 | Reboot (shutdown + POST) | ~11s | 4% |
 | Boot 2: Kernel/initrd | ~9s | 3% |
 | Boot 2: chrony-wait (NTP sync) | ~24s | 8% |
@@ -82,20 +82,20 @@ graphical.target @27.708s
 
 | Metric | Standard_D4s_v3 | Standard_D4s_v5 | Delta |
 |--------|----------------|----------------|-------|
-| **Total time** | **7m 3s** | **4m 43s** | **-2m 20s (33% faster)** |
+| **Total time** | **7m 3sec** | **4m 43sec** | **-2m 20sec (33% faster)** |
 | Azure VM Provisioning | 32s | 19s | -13s |
 | Boot 1 (Ignition + pivot) | 29s | 23s | -6s |
-| MCD firstboot (rpm-ostree) | 2m 44s | 2m 13s | -31s |
+| MCD firstboot (rpm-ostree) | 2m 44sec | 2m 13sec | -31s |
 | Reboot | 26s | 11s | -15s |
 | Boot 2 kernel/initrd | 12s | 9s | -3s |
 | chrony-wait | 24s | 24s | 0s |
 | OVS configuration | 14s | 5s | -9s |
 | CRI-O + Kubelet start | 1s | 1s | 0s |
-| Kubelet to NodeReady | 2m 14s | 56s | -1m 18s |
+| Kubelet to NodeReady | 2m 14sec | 56s | -1m 18sec |
 | **systemd-analyze total** | **40.9s** | **31.7s** | **-9.2s** |
 
 ### Key Differences
-1. **Kubelet to NodeReady is dramatically faster on v5** (56s vs 2m14s). This is likely due to
+1. **Kubelet to NodeReady is dramatically faster on v5** (56s vs 2m 14sec). This is likely due to
    faster I/O and CPU on the v5 generation improving CSR processing and CNI configuration.
 2. **VM provisioning is faster** (19s vs 32s) — v5 instances launch quicker in Azure.
 3. **MCD firstboot is ~30s faster** — the rpm-ostree rebase benefits from better I/O.
