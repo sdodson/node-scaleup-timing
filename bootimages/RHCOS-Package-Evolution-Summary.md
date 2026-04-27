@@ -123,6 +123,53 @@ The 124 inconsistent packages fall into recognizable patterns:
 
 ---
 
+## Z-Stream Bisection: First Half vs Second Half
+
+We extracted RPM lists from the midpoint of each z-stream lifecycle (4.12.43, 4.14.32, 4.16.30, 4.18.19, 4.19.14) to determine whether updates are front-loaded or back-loaded.
+
+### Update Counts by Half
+
+| Version | Range | Unchanged | Updated | Added | Removed | % Updated |
+|---------|-------|----------:|--------:|------:|--------:|----------:|
+| 4.12 | .0 → .43 (1st half) | 372 | 131 | 0 | 0 | 26% |
+|        | .43 → .87 (2nd half) | 341 | 159 | 1 | 3 | 31% |
+| 4.14 | .0 → .32 (1st half) | 395 | 122 | 1 | 0 | 23% |
+|        | .32 → .64 (2nd half) | 372 | 144 | 3 | 2 | 27% |
+| 4.16 | .0 → .30 (1st half) | 409 | 133 | 0 | 0 | 24% |
+|        | .30 → .60 (2nd half) | 365 | 177 | 0 | 0 | 32% |
+| 4.18 | .0 → .19 (1st half) | 483 | 81 | 0 | 0 | 14% |
+|        | .19 → .38 (2nd half) | 399 | 164 | 1 | 1 | 29% |
+| 4.19 | .0 → .14 (1st half) | 434 | 132 | 0 | 4 | 23% |
+|        | .14 → .29 (2nd half) | 434 | 132 | 4 | 0 | 23% |
+
+### Key Observations
+
+**Updates are back-loaded, not front-loaded.** In 4 of 5 versions, the second half of the z-stream lifecycle has more updated packages than the first half. The effect is strongest in 4.18 (2x ratio) and 4.16 (1.33x). Only 4.19 is evenly split — but it also has the fewest z-streams (29) so may not have had time for the pattern to emerge.
+
+**Most updated packages get updated in both halves.** The overlap between first-half and second-half updates is substantial — these are packages that receive continuous CVE/bugfix attention throughout the lifecycle:
+
+| Version | 1st half | 2nd half | Both halves | 1st only | 2nd only |
+|---------|----------|----------|-------------|----------|----------|
+| 4.12    | 131      | 159      | 101         | 30       | 58       |
+| 4.14    | 122      | 144      | 99          | 23       | 45       |
+| 4.16    | 133      | 177      | 105         | 28       | 72       |
+| 4.18    | 81       | 164      | 64          | 17       | 100      |
+| 4.19    | 132      | 132      | 71          | 61       | 61       |
+
+**The "2nd half only" bucket is consistently larger than "1st half only"**, meaning more packages transition from unchanged to updated in the second half than settle down after an early update. This suggests ongoing CVE discovery and RHEL erratum flow accelerates as a release matures.
+
+### Consistently Late-Arriving Packages
+
+Packages that are only updated in the second half across 4+ versions — these consistently receive their first z-stream update late in the lifecycle:
+
+- `gnupg2` (5/5), `bsdtar`/`libarchive` (4/5), `jq` (4/5), `libssh` (4/5), `rsync` (4/5), `vim-minimal` (4/5), `nftables` (4/5), `irqbalance` (4/5), `libbrotli` (4/5), `libxslt` (4/5)
+
+### Consistently Front-Loaded Packages
+
+Only 3 packages are consistently updated in the first half but not the second (in 3/5 versions): `containers-common`, `rpm-ostree`, `rpm-ostree-libs`. These are OCP-specific components that stabilize early.
+
+---
+
 ## Package Additions and Removals Per Lifecycle
 
 ### 4.12.0 → 4.12.87
@@ -173,7 +220,7 @@ Packages present in the container image but absent from the VMDK are primarily O
 
 | File | Description |
 |------|-------------|
-| `rpms-{version}.txt` | Full RPM list for each release (10 files, GA + latest for each version) |
+| `rpms-{version}.txt` | Full RPM list for each release (15 files: GA, midpoint, and latest for each version) |
 | `rpms-vmdk.txt` | RPM list extracted from the VMDK disk image |
 | `rpms-common-all-three.txt` | Packages common to 4.19.0, 4.19.29, and the VMDK |
 | `rpms-same-containers.txt` | Packages identical between the two container image versions |
