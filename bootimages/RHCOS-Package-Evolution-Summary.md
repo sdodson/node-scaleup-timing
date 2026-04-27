@@ -92,6 +92,37 @@ These form the stable core and include foundational packages that rarely receive
 
 ---
 
+## Cross-Version Consistency of Unchanged Packages
+
+We examined the 454 packages present in all five GA releases to determine whether a package's "unchanged" or "updated" status is consistent across OCP minor versions. In other words: if `coreutils` stays at its GA version throughout 4.14.z, does it also stay unchanged in 4.16.z?
+
+### Consistency Distribution
+
+| Behavior | Packages | % of 454 |
+|----------|----------|----------|
+| **Always unchanged** (5/5 versions) | 230 | 51% |
+| **Always updated** (0/5 versions) | 100 | 22% |
+| Unchanged in 4/5 versions | 59 | 13% |
+| Unchanged in 1/5 versions | 29 | 6% |
+| Unchanged in 2/5 versions | 19 | 4% |
+| Unchanged in 3/5 versions | 17 | 4% |
+
+**73% of packages** (330/454) behave identically across all five OCP versions — either always unchanged or always updated. The remaining **27%** (124 packages) are a "swing tier" whose update status varies by version.
+
+The full list of 230 packages that never received a z-stream update in any OCP version is in [`packages-never-updated-in-zstreams.txt`](packages-never-updated-in-zstreams.txt).
+
+### Swing Tier Patterns
+
+The 124 inconsistent packages fall into recognizable patterns:
+
+- **4/5 unchanged (59 packages):** Nearly stable, with a one-off CVE fix in a single version — e.g., `bzip2` (only updated in 4.16), `dbus` (only in 4.12), `elfutils-*` (only in 4.19).
+
+- **1/5 unchanged (29 packages):** Nearly always updated, with one version where the GA version happened to survive — e.g., `dracut` (unchanged only in 4.12), `libgcc`/`libstdc++` (unchanged only in 4.19).
+
+- **2-3/5 unchanged (36 packages):** Genuinely unpredictable — e.g., the `perl-*` interpreter packages shifted from stable in 4.12/4.14 to always-updated starting in 4.16; `polkit` went the other direction. These often reflect a RHEL rebase boundary where upstream cadence changed.
+
+---
+
 ## Package Additions and Removals Per Lifecycle
 
 ### 4.12.0 → 4.12.87
@@ -148,5 +179,6 @@ Packages present in the container image but absent from the VMDK are primarily O
 | `rpms-same-containers.txt` | Packages identical between the two container image versions |
 | `name-map-*.txt` | Package name → full NEVRA mappings |
 | `pkgnames-rpms-*.txt` | Deduplicated package name lists |
+| `packages-never-updated-in-zstreams.txt` | 230 packages unchanged in all 5 z-stream lifecycles |
 | `rhcos-rpm-evolution-report.txt` | Full detailed evolution report with per-package diffs |
 | `scripts/` | Shell scripts used for extraction and analysis |
