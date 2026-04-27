@@ -420,6 +420,73 @@ multus-additional-cni-plugins is consistently the critical-path bottleneck at ~5
 | MCD firstboot (rpm-ostree rebase) | 111s | 122s | 33s |
 | Other (kernel boot, shutdown) | 11s | 11s | 1s |
 
+### Detailed Boot 1 Timeline (r3-z1 sample, Boot 1 = 164s)
+
+Source: `node-journal-aro-upgrade-4-20-18-d4s-v5-r3-z1.log`
+
+| # | Timestamp | Δ | Cumul. | Milestone |
+|---|-----------|---|--------|-----------|
+| 1 | 20:53:19 | — | 0s | First kernel message (5.14.0-427.42.1.el9_4, boot image kernel) |
+| 2 | 20:53:21 | 2s | 2s | Ignition IMDS attempt #1 (network unreachable — DHCP not yet complete) |
+| 3 | 20:53:28 | 7s | 9s | DHCP lease acquired (eth0, 10.0.2.135) |
+| 4 | 20:53:33 | 5s | 14s | Ignition fetch succeeds (IMDS attempt #7, MCS config from 10.0.2.4:22623) |
+| 5 | 20:53:36 | 3s | 17s | Ignition disks/grow/mount done (root partition 3 GB → 128 GB) |
+| 6 | 20:53:37 | 1s | 18s | Ignition files written (~80 files/units in ~1s) |
+| 7 | 20:53:38 | 1s | 19s | Initrd teardown (coreos-teardown-initramfs, flush routes) |
+| 8 | 20:53:38 | 0s | 19s | Switch Root target reached |
+| 9 | 20:53:39 | 1s | 20s | Real-root systemd init begins |
+| 10 | 20:53:45 | 6s | 26s | CRI-O starts (1.29.9); machine-config-daemon-pull.service starts |
+| 11 | 20:53:59 | 14s | 40s | MCD image pull complete (podman pull MCD container, ~14s) |
+| 12 | 20:54:00 | 1s | 41s | machine-config-daemon-firstboot.service starts; detects osUpdate+kargs changes |
+| 13 | 20:54:19 | 19s | 60s | Extensions image pull complete (node-image-extensions container, ~19s) |
+| 14 | 20:54:29 | 10s | 70s | Extensions content extracted (podman cp + chcon relabeling, ~10s) |
+| 15 | 20:54:29 | 0s | 70s | rpm-ostree cleanup; rebase initiated |
+| 16 | 20:54:31 | 2s | 72s | Layer fetching begins (51 ostree chunks, 1.3 GB + 2 custom layers, 193 MB) |
+| 17 | 20:54:43 | 12s | 84s | Base ostree chunk fetched (sha256:831efff, 623 MB @ ~52 MB/s) |
+| 18 | 20:55:28 | 45s | 129s | All 51 ostree chunks fetched (remaining 50 chunks, ~700 MB in 45s) |
+| 19 | 20:55:41 | 13s | 142s | Custom layers fetched (sha256:d9d9e2, 192.9 MB @ ~15 MB/s) |
+| 20 | 20:55:46 | 5s | 147s | Staging deployment done (ostree checkout + SELinux relabeling) |
+| 21 | 20:55:47 | 1s | 148s | Txn Rebase successful; RPM diff printed |
+| 22 | 20:55:49 | 2s | 150s | kargs redeployment starts (cgroup_no_v1, psi=0, unified_cgroup_hierarchy) |
+| 23 | 20:55:51 | 2s | 152s | kargs deployment done |
+| 24 | 20:55:52 | 1s | 153s | MCD: "Rebooting node" — systemd reboot initiated |
+| 25 | 20:56:03 | 11s | 164s | ostree-finalize-staged complete (2.1s CPU); last boot 1 messages |
+| 26 | 20:56:11 | 8s | — | Boot 2 kernel starts (5.14.0-570.104.1.el9_6 — rebased kernel) |
+
+### Detailed Boot 1 Comparison: 4.19 vs 4.20 (r3-z1 samples)
+
+Compared against `node-journal-aro-upgrade-4-19-27-d4s-v5-r3-z1.log` (Boot 1 = 138s).
+
+| Sub-Phase | 4.19 r3-z1 | 4.20 r3-z1 | Delta | Notes |
+|-----------|------------|------------|-------|-------|
+| Kernel + initrd + dracut | 3s | 2s | -1s | Same kernel (5.14.0-427.42.1) |
+| Ignition IMDS retries | 6s (6 att.) | 12s (7 att.) | **+6s** | Extra retry due to DHCP/IMDS race |
+| Ignition disks/grow/mount | 3s | 3s | flat | |
+| Ignition files | 1s | 1s | flat | |
+| Teardown + switch-root | 2s | 2s | flat | |
+| Real-root systemd init | 5s | 6s | +1s | |
+| **Ignition+Pivot subtotal** | **20s** | **26s** | **+6s** | |
+| MCD image pull | 11s | 14s | +3s | Larger MCD container for 4.20 |
+| Extensions pull | 17s | 19s | +2s | node-image-extensions container |
+| Extensions copy + relabel | 7s | 10s | +3s | podman cp + chcon |
+| rpm-ostree layer fetch | 59s | 70s | **+11s** | 51 chunks + 2 layers; see below |
+| rpm-ostree staging | 5s | 5s | flat | Checkout + SELinux relabel |
+| kargs redeployment | 4s | 5s | +1s | |
+| MCD → reboot trigger | 1s | 1s | flat | |
+| **MCD total (pull+firstboot)** | **104s** | **127s** | **+23s** | |
+| Shutdown + ostree-finalize | 10s | 11s | +1s | ostree-finalize: ~2.1s CPU each |
+| **Total Boot 1** | **138s** | **164s** | **+26s** | |
+| Reboot gap (POST+bootloader) | 8s | 8s | flat | |
+
+**Where the +26s grew**:
+
+1. **rpm-ostree layer fetch (+11s)** — the largest single contributor. Both versions fetch 51 ostree chunks (~1.3 GB) plus 2 custom layers. The base ostree chunk (sha256:831efff, 623 MB) is identical across versions. The custom layer grew slightly (187.4 → 192.9 MB, +3%). Most of the +11s appears to be network throughput variance rather than content growth — the ostree chunks took 47s (4.19) vs 57s (4.20) despite having the same count and similar total size.
+2. **Ignition IMDS retries (+6s)** — 4.19 succeeded on IMDS attempt #6 immediately after DHCP, while 4.20 needed attempt #7 (exponential backoff adds ~5s per extra retry). This is a DHCP/IMDS timing race, not a version-dependent change.
+3. **Extensions pull+copy (+5s)** — the node-image-extensions container pull took 2s longer and content extraction (podman cp + chcon) took 3s longer, consistent with slightly larger extension content in 4.20.
+4. **MCD image pull (+3s)** — the MCO container image is larger in 4.20.
+
+**What did NOT grow**: rpm-ostree deployment staging (5s both versions), Ignition files (1s), switch-root (2s), ostree-finalize (2.1s CPU), reboot gap (8s).
+
 ### Changes from 4.19.27
 
 | Phase | 4.19.27 | 4.20.18 (excl. r4) | Delta |
@@ -449,6 +516,7 @@ multus-additional-cni-plugins is consistently the critical-path bottleneck at ~5
 - **Round 4 outlier**: All 3 zones had MCD 194-208s (2× normal), consistent with transient registry/network slowdown — same pattern as 4.18 round 4.
 - **Boot image confirmed as `aro_416/416.94.20241021`** — overridden in machinesets.
 - **Total growth is flattening**: +45s cumulative over 4 version steps, but only +4s in the latest step (4.19 → 4.20). MCD grows ~5-8s per step while KTR has stabilized.
+- **Detailed journal analysis** (r3-z1 sample) shows the Boot 1 growth is spread across rpm-ostree layer fetch (+11s, mostly throughput variance), Ignition IMDS retry jitter (+6s), and extensions image pull/copy (+5s). Deployment staging and ostree-finalize are stable at 5s and 2.1s CPU respectively.
 
 ## OCP 4.20.18 (Native Boot Image) — After Boot Image Update
 
