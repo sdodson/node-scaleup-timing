@@ -1,0 +1,46 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+  name: 99-worker-pre-pull-cni
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    systemd:
+      units:
+        - name: pre-pull-cni-images.service
+          enabled: true
+          contents: |
+            [Unit]
+            Description=Pre-pull NodeReady-blocking CNI images during firstboot
+            # Run after ignition and pivot so network + registries.conf are ready.
+            # Run in parallel with MCD firstboot — do NOT depend on it finishing.
+            After=ignition-firstboot-complete.service
+            After=network-online.target
+            Wants=network-online.target
+            # Only run on firstboot — no point re-pulling on existing nodes.
+            ConditionPathExists=/etc/machine-config-daemon/currentconfig
+            ConditionFirstBoot=true
+
+            [Service]
+            Type=oneshot
+            ExecStart=/usr/local/bin/pre-pull-cni-images.sh
+            # Don't block reboot. If MCD finishes and calls reboot while we're
+            # still pulling, systemd sends SIGTERM — we exit cleanly.
+            TimeoutStartSec=300
+            # Failure is non-fatal — worst case we fall back to normal pull in Boot 2.
+            SuccessExitStatus=0 1 143
+            StandardOutput=journal+console
+            StandardError=journal+console
+
+            [Install]
+            WantedBy=multi-user.target
+    storage:
+      files:
+        - path: /usr/local/bin/pre-pull-cni-images.sh
+          mode: 0755
+          overwrite: true
+          contents:
+            source: data:text/plain;charset=utf-8;base64,IyEvYmluL2Jhc2gKIyBQcmUtcHVsbCBOb2RlUmVhZHktYmxvY2tpbmcgY29udGFpbmVyIGltYWdlcyBkdXJpbmcgZmlyc3Rib290LgojIFJ1bnMgaW4gcGFyYWxsZWwgd2l0aCBNQ0QgZmlyc3Rib290IChycG0tb3N0cmVlIHJlYmFzZSkgdG8gb3ZlcmxhcAojIG5ldHdvcmstYm91bmQgaW1hZ2UgcHVsbHMgd2l0aCBJL08tYm91bmQgcmViYXNlIHdvcmsuCiMKIyBJbWFnZXMgYXJlIHB1bGxlZCB2aWEgcG9kbWFuIGludG8gL3Zhci9saWIvY29udGFpbmVycy9zdG9yYWdlLCB3aGljaAojIGlzIHRoZSBzYW1lIGdyYXBocm9vdCBDUkktTyB1c2VzLiBBZnRlciByZWJvb3QsIENSSS1PIGZpbmRzIHRoZW0KIyBjYWNoZWQgYW5kIHNraXBzIHJlLXB1bGxpbmcsIHNhdmluZyA0MC02MHMgb24gS1RSLgojCiMgSW1hZ2UgZGlzY292ZXJ5OiBleHRyYWN0cyByZWZzIGZyb20gdGhlIHJlbGVhc2UgaW1hZ2UgcGF5bG9hZCBzbwojIHRoZSBzY3JpcHQgd29ya3MgYWNyb3NzIE9DUCB2ZXJzaW9ucyB3aXRob3V0IGhhcmRjb2RlZCBkaWdlc3RzLgoKc2V0IC1vIHBpcGVmYWlsCgpMT0dfVEFHPSJwcmUtcHVsbC1jbmkiCmxvZygpIHsgZWNobyAiJChkYXRlIC1Jc2Vjb25kcykgJHtMT0dfVEFHfTogJCoiOyB9CgpQVUxMX1NFQ1JFVD0iL3Zhci9saWIva3ViZWxldC9jb25maWcuanNvbiIKaWYgWyAhIC1mICIkUFVMTF9TRUNSRVQiIF07IHRoZW4KICAgIFBVTExfU0VDUkVUPSIvcm9vdC8uZG9ja2VyL2NvbmZpZy5qc29uIgpmaQppZiBbICEgLWYgIiRQVUxMX1NFQ1JFVCIgXTsgdGhlbgogICAgbG9nICJObyBwdWxsIHNlY3JldCBmb3VuZCwgZXhpdGluZyIKICAgIGV4aXQgMApmaQoKIyBGaW5kIHRoZSByZWxlYXNlIGltYWdlIGZyb20gdGhlIHJlbmRlcmVkIG1hY2hpbmUgY29uZmlnLgojIElnbml0aW9uIHdyaXRlcyB0aGlzIGR1cmluZyBlYXJseSBib290IGJlZm9yZSBNQ0QgcnVucy4KUkVMRUFTRV9JTUFHRT0iIgpmb3IgbWNfZmlsZSBpbiAvZXRjL21hY2hpbmUtY29uZmlnLWRhZW1vbi9jdXJyZW50Y29uZmlnIC9ldGMvbWNvL2N1cnJlbnRjb25maWc7IGRvCiAgICBpZiBbIC1mICIkbWNfZmlsZSIgXTsgdGhlbgogICAgICAgIFJFTEVBU0VfSU1BR0U9JChqcSAtciAnLnNwZWMucmVsZWFzZUltYWdlIC8vIC5zcGVjLm9zSW1hZ2VVUkwgLy8gZW1wdHknICIkbWNfZmlsZSIgMj4vZGV2L251bGwpCiAgICAgICAgaWYgWyAtbiAiJFJFTEVBU0VfSU1BR0UiIF07IHRoZW4KICAgICAgICAgICAgYnJlYWsKICAgICAgICBmaQogICAgZmkKZG9uZQoKIyBGYWxsYmFjazogY2hlY2sgdGhlIG1hY2hpbmUtY29uZmlnLWRhZW1vbiBwdWxsIHNwZWMKaWYgWyAteiAiJFJFTEVBU0VfSU1BR0UiIF07IHRoZW4KICAgIGxvZyAiQ291bGQgbm90IGZpbmQgcmVsZWFzZSBpbWFnZSBmcm9tIG1hY2hpbmUgY29uZmlnLCB0cnlpbmcgY2x1c3RlcnZlcnNpb24iCiAgICAjIE9uIGZpcnN0Ym9vdCB0aGUga3ViZWxldCBpc24ndCB1cCB5ZXQsIHNvIHdlIGNhbid0IHF1ZXJ5IHRoZSBBUEkuCiAgICAjIFRyeSB0byBwYXJzZSBmcm9tIHRoZSBpZ25pdGlvbi13cml0dGVuIGJvb3RzdHJhcCBjb25maWcuCiAgICBSRUxFQVNFX0lNQUdFPSQoZmluZCAvZXRjIC1uYW1lICIqLmpzb24iIC1wYXRoICIqL21hY2hpbmUtY29uZmlnKiIgLWV4ZWMgXAogICAgICAgIGpxIC1yICcuc3BlYy5yZWxlYXNlSW1hZ2UgLy8gZW1wdHknIHt9IFw7IDI+L2Rldi9udWxsIHwgaGVhZCAtMSkKZmkKCmlmIFsgLXogIiRSRUxFQVNFX0lNQUdFIiBdOyB0aGVuCiAgICBsb2cgIkNhbm5vdCBkZXRlcm1pbmUgcmVsZWFzZSBpbWFnZSwgZXhpdGluZyIKICAgIGV4aXQgMApmaQoKbG9nICJSZWxlYXNlIGltYWdlOiAke1JFTEVBU0VfSU1BR0V9IgoKIyBDb21wb25lbnRzIHdob3NlIGltYWdlcyBibG9jayBOb2RlUmVhZHkgKG9yZGVyZWQgYnkgcHVsbCB0aW1lIGltcGFjdCkKQ09NUE9ORU5UUz0oCiAgICAibXVsdHVzLWNuaSIKICAgICJtdWx0dXMtYWRkaXRpb25hbC1jbmktcGx1Z2lucyIgICAgIyB+NTZzIHB1bGwsIGNyaXRpY2FsIHBhdGgKICAgICJvdm4ta3ViZXJuZXRlcy1taWNyb3NoaWZ0IiAgICAgICAgIyBvdm4tayBub2RlIGltYWdlCiAgICAib3ZuLWt1YmVybmV0ZXMiICAgICAgICAgICAgICAgICAgICMgfjMzcyBwdWxsCiAgICAibmV0d29yay1tZXRyaWNzLWRhZW1vbiIKICAgICJtYWNoaW5lLWNvbmZpZy1vcGVyYXRvciIgICAgICAgICAgIyBNQ0QgZGFlbW9uc2V0CiAgICAia3ViZS1yYmFjLXByb3h5IgogICAgImNsdXN0ZXItbm9kZS10dW5pbmctb3BlcmF0b3IiCikKCnB1bGxfaW1hZ2UoKSB7CiAgICBsb2NhbCBjb21wb25lbnQ9IiQxIgogICAgbG9jYWwgaW1hZ2VfcmVmCgogICAgIyBFeHRyYWN0IHRoZSBpbWFnZSByZWZlcmVuY2UgZm9yIHRoaXMgY29tcG9uZW50IGZyb20gdGhlIHJlbGVhc2UgcGF5bG9hZAogICAgaW1hZ2VfcmVmPSQocG9kbWFuIHJ1biAtLXJtIC0tYXV0aGZpbGUgIiRQVUxMX1NFQ1JFVCIgXAogICAgICAgICIkUkVMRUFTRV9JTUFHRSIgaW1hZ2UgIiR7Y29tcG9uZW50fSIgMj4vZGV2L251bGwpIHx8IHRydWUKCiAgICBpZiBbIC16ICIkaW1hZ2VfcmVmIiBdOyB0aGVuCiAgICAgICAgbG9nICJTS0lQICR7Y29tcG9uZW50fTogbm90IGZvdW5kIGluIHJlbGVhc2UgcGF5bG9hZCIKICAgICAgICByZXR1cm4KICAgIGZpCgogICAgbG9nICJQVUxMICR7Y29tcG9uZW50fTogJHtpbWFnZV9yZWZ9IgogICAgaWYgcG9kbWFuIHB1bGwgLS1hdXRoZmlsZSAiJFBVTExfU0VDUkVUIiAiJGltYWdlX3JlZiIgMj4mMTsgdGhlbgogICAgICAgIGxvZyAiT0sgICAke2NvbXBvbmVudH06IGNhY2hlZCIKICAgIGVsc2UKICAgICAgICBsb2cgIkZBSUwgJHtjb21wb25lbnR9OiBwdWxsIGZhaWxlZCAobm9uLWZhdGFsKSIKICAgIGZpCn0KCmxvZyAiU3RhcnRpbmcgb3Bwb3J0dW5pc3RpYyBwcmUtcHVsbCBvZiAkeyNDT01QT05FTlRTW0BdfSBDTkkvbm9kZSBpbWFnZXMiCgojIFB1bGwgaW1hZ2VzIGluIHBhcmFsbGVsIChiYWNrZ3JvdW5kIGpvYnMpIHRvIG1heGltaXplIG92ZXJsYXAgd2l0aCBNQ0QgcmViYXNlLgojIExpbWl0IGNvbmN1cnJlbmN5IHRvIGF2b2lkIHNhdHVyYXRpbmcgdGhlIG5ldHdvcmsuCk1BWF9QQVJBTExFTD0zClJVTk5JTkc9MAoKZm9yIGNvbXBvbmVudCBpbiAiJHtDT01QT05FTlRTW0BdfSI7IGRvCiAgICBwdWxsX2ltYWdlICIkY29tcG9uZW50IiAmCiAgICBSVU5OSU5HPSQoKFJVTk5JTkcgKyAxKSkKCiAgICBpZiBbICIkUlVOTklORyIgLWdlICIkTUFYX1BBUkFMTEVMIiBdOyB0aGVuCiAgICAgICAgd2FpdCAtbiAyPi9kZXYvbnVsbCB8fCB0cnVlCiAgICAgICAgUlVOTklORz0kKChSVU5OSU5HIC0gMSkpCiAgICBmaQpkb25lCgojIFdhaXQgZm9yIHJlbWFpbmluZyBwdWxscywgYnV0IGRvbid0IGJsb2NrIGZvcmV2ZXIuCiMgSWYgdGhlIHN5c3RlbSBpcyByZWJvb3RpbmcsIFNJR1RFUk0gd2lsbCBraWxsIHVzIOKAlCB0aGF0J3MgZmluZS4Kd2FpdCAyPi9kZXYvbnVsbCB8fCB0cnVlCgpsb2cgIlByZS1wdWxsIGNvbXBsZXRlICgkKHBvZG1hbiBpbWFnZXMgLS1mb3JtYXQgJ3t7LlJlcG9zaXRvcnl9fScgMj4vZGV2L251bGwgfCB3YyAtbCkgaW1hZ2VzIGNhY2hlZCkiCg==

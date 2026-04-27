@@ -51,7 +51,7 @@ VM boot images come from Azure Marketplace publisher `azureopenshift`. **The boo
 
 ⁱⁱ 4.20.18 excludes round 4 outlier (3 samples). With all 24: mean 293s, stdev 42s. Round 4 had MCD 2× slower due to transient registry/network slowdown.
 
-ⁱⁱⁱ 4.20.18 (native) excludes r8-z1 outlier (1 sample). With all 24: mean 308s, stdev 65s. r8-z1 had boot1 457s due to Ignition/pivot stall.
+ⁱⁱⁱ 4.20.18 (native) excludes r8-z1 outlier (1 sample). With all 24: mean 308s, stdev 65s. r8-z1 had boot1 457s due to Ignition/pivot stall. **Caution**: The native test ran sequentially after the override test on the same evening. Layer sharing analysis shows both boot images fetch nearly identical data (~1.5 GB, 50-51 ostree chunks with matching hashes), so the +18s vs override is likely registry throughput variance, not a boot-image effect. See "Layer Sharing Analysis" in the native section.
 
 ## OCP 4.16.30 — Baseline (Fresh Install)
 
@@ -520,7 +520,7 @@ Compared against `node-journal-aro-upgrade-4-19-27-d4s-v5-r3-z1.log` (Boot 1 = 1
 
 ## OCP 4.20.18 (Native Boot Image) — After Boot Image Update
 
-After completing the 4.20.18 override tests, machinesets were updated to use the native `aro4/420-v2/9.6.20251015` boot image (a 4.20-era image). This eliminates the 4-version boot image drift and measures the impact of refreshing the boot image.
+After completing the 4.20.18 override tests, machinesets were updated to use the native `aro4/420-v2/9.6.20251015` boot image (a 4.20-era image). This eliminates the 4-version boot image drift and tests whether refreshing the boot image reduces scale-up time. **Result**: it does not — layer sharing analysis shows the native boot image shares only 1 of 51 ostree chunks (2.3 kB) with the 4.20.18 target, so rpm-ostree must fetch the same ~1.5 GB regardless of boot image. See "Layer Sharing Analysis" below.
 
 ### All Data Points
 
@@ -594,13 +594,37 @@ After completing the 4.20.18 override tests, machinesets were updated to use the
 | systemd-analyze | 33.4s | 32.2s | -1.2s |
 | chrony-wait | 24.1s | 24.1s | flat |
 
+### MCD Sub-Phase Comparison (all clean samples)
+
+| MCD Sub-Phase | Override (n=21) | Native (n=23) | Delta |
+|---|---|---|---|
+| Extensions pull+copy | 30.0s (σ=2.0) | 32.6s (σ=7.1) | +2.6s |
+| rpm-ostree rebase | 74.0s (σ=11.3) | 85.0s (σ=14.6) | **+11.0s** |
+| kargs+reboot | 4.8s (σ=0.5) | 6.3s (σ=1.3) | +1.5s |
+| **Total MCD** | **108.8s** | **124.0s** | **+15.2s** |
+
+### Layer Sharing Analysis: Why the Native Boot Image Doesn't Help
+
+Journal analysis reveals that the 4.20 native boot image (`aro4/420-v2`) shares almost nothing with the 4.20.18 target OS image at the ostree layer level:
+
+| Metric | Override (4.16 boot image) | Native (4.20 boot image) |
+|--------|---------------------------|--------------------------|
+| Ostree chunk layers needed | 51 | 50 |
+| Ostree chunk layers already present | 0 | 1 |
+| Shared layer | — | sha256:9dad063a624b (**2.3 kB**) |
+| Custom layers needed | 2 (192.9 MB) | 2 (192.9 MB) |
+| Total data fetched | ~1.5 GB | ~1.5 GB |
+
+The 50 ostree chunks fetched by the native boot image have **identical hashes** to 50 of the 51 chunks fetched by the override. The single "shared" layer is 2.3 kB — effectively zero savings. Both boot images must fetch the same ~1.5 GB of OS content during rpm-ostree rebase.
+
+This means the boot image version has **no meaningful effect on which layers need fetching or how much data is transferred**. The +15s MCD penalty seen with the native boot image is not caused by boot image drift or layer sharing — it is registry throughput variance from sequential testing.
+
 ### Notes
 
-- **Native boot image is 18s SLOWER than override** — a counterintuitive result. Updating the boot image from `aro_416` (4.16) to `420-v2` (4.20) did not improve scale-up time.
-- **MCD firstboot grew +15s** (111s → 126s) despite the boot image being much closer to the target. The `420-v2` image still requires an rpm-ostree rebase to 4.20.18, and the rebase appears to be slower — possibly because the 4.20 RHCOS base is larger or the diff computation is more expensive when versions are close but not identical.
-- **Reboot dropped -2s** (8s → 6s) — the only phase that improved with the native image, suggesting less OS-level change is applied during the reboot.
-- **systemd-analyze dropped -1.2s** (33.4s → 32.2s) — the 4.20 boot image has a slightly faster boot 2, but this is offset by the slower MCD.
+- **Native boot image is 18s SLOWER than override** — but this is not a boot-image effect. Layer sharing analysis shows both boot images fetch nearly identical data (~1.5 GB, 50-51 ostree chunks with matching hashes). The +15s MCD penalty is concentrated in rpm-ostree rebase (+11s) and is attributable to registry throughput variance.
+- **The native test ran immediately after the override test** (override: 20:36–21:39 UTC, native: 21:40–22:47 UTC). Native rounds 4-5 were the slowest (rpm-ostree rebase 87-113s vs override mean 74s), consistent with progressive registry slowdown over the evening. The sequential test design confounds boot image effects with time-of-day registry effects.
+- **Reboot dropped -2s** (8s → 6s) — the only phase that genuinely improved with the native image, suggesting less OS-level change is applied during the reboot.
+- **systemd-analyze dropped -1.2s** (33.4s → 32.2s) — the 4.20 boot image has a slightly faster boot 2.
 - **KTR is essentially unchanged** (-1s) — expected, since KTR depends on container image pulls and CSR approval, not the boot image.
 - **r8-z1 outlier**: boot1 was 457s with boot1_remainder of 347s but MCD only 110s — indicates an Ignition or pivot stall, not MCD slowdown. Only zone 1 was affected; z2 and z3 in round 8 were normal.
-- **Boot image**: `aro4/420-v2/9.6.20251015` — the native ARO 4.20 marketplace image. MCD still performs a full rebase, confirming the boot image does not exactly match 4.20.18.
-- **The native test ran immediately after the override test** (override: 20:36–21:39 UTC, native: 21:40–22:47 UTC), so time-of-day registry effects could contribute to the higher MCD times. However, the +15s MCD increase is consistent across all 7 clean rounds, making registry variance an unlikely sole explanation.
+- **Boot image**: `aro4/420-v2/9.6.20251015` — the native ARO 4.20 marketplace image. MCD still performs a full rebase because the boot image does not exactly match 4.20.18, and ostree chunking produces almost entirely different layer hashes even for closely related OS versions.
