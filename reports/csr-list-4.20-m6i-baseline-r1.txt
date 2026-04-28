@@ -1,0 +1,13 @@
+NAME        AGE   SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
+csr-9q5wz   14m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
+csr-cjljj   15m   kubernetes.io/kubelet-serving                 system:node:ip-10-0-21-148.us-east-2.compute.internal                       <none>              Approved,Issued
+csr-cz8pr   15m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
+csr-gnpx8   11m   kubernetes.io/kube-apiserver-client           system:node:ip-10-0-43-75.us-east-2.compute.internal                        24h                 Approved,Issued
+csr-km94l   11m   kubernetes.io/kube-apiserver-client           system:node:ip-10-0-43-75.us-east-2.compute.internal                        24h                 Approved,Issued
+csr-lh5w9   14m   kubernetes.io/kube-apiserver-client           system:node:ip-10-0-21-148.us-east-2.compute.internal                       24h                 Approved,Issued
+csr-lpncc   14m   kubernetes.io/kube-apiserver-client           system:node:ip-10-0-70-131.us-east-2.compute.internal                       24h                 Approved,Issued
+csr-lskp5   12m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
+csr-rnb7c   14m   kubernetes.io/kube-apiserver-client           system:node:ip-10-0-70-131.us-east-2.compute.internal                       24h                 Approved,Issued
+csr-xfr64   14m   kubernetes.io/kubelet-serving                 system:node:ip-10-0-70-131.us-east-2.compute.internal                       <none>              Approved,Issued
+csr-xpdjp   14m   kubernetes.io/kube-apiserver-client           system:node:ip-10-0-21-148.us-east-2.compute.internal                       24h                 Approved,Issued
+csr-zc2pk   12m   kubernetes.io/kubelet-serving                 system:node:ip-10-0-43-75.us-east-2.compute.internal                        <none>              Approved,Issued

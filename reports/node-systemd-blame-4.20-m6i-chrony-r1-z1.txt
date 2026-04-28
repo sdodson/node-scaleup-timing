@@ -1,0 +1,145 @@
+3.429s sys-module-fuse.device
+3.352s sys-devices-platform-serial8250-tty-ttyS3.device
+3.352s dev-ttyS3.device
+3.351s dev-ttyS2.device
+3.351s sys-devices-platform-serial8250-tty-ttyS2.device
+3.350s dev-ttyS0.device
+3.350s sys-devices-pnp0-00:04-tty-ttyS0.device
+3.350s dev-ttyS1.device
+3.350s sys-devices-platform-serial8250-tty-ttyS1.device
+3.343s sys-module-configfs.device
+3.160s sys-devices-pci0000:00-0000:00:05.0-net-ens5.device
+3.160s sys-subsystem-net-devices-ens5.device
+3.157s dev-disk-by\x2dpartuuid-fa8cd102\x2d5e92\x2d554e\x2dac90\x2da1f2e48e1148.device
+3.157s sys-devices-pci0000:00-0000:00:04.0-nvme-nvme0-nvme0n1-nvme0n1p4.device
+3.157s dev-disk-by\x2dpartlabel-root.device
+3.157s dev-disk-by\x2did-nvme\x2dAmazon_Elastic_Block_Store_vol0f219f557bfc41b49\x2dpart4.device
+3.157s dev-disk-by\x2dpath-pci\x2d0000:00:04.0\x2dnvme\x2d1\x2dpart4.device
+3.157s dev-nvme0n1p4.device
+3.157s dev-disk-by\x2duuid-f7dbb0cc\x2d4392\x2d435d\x2da014\x2d0580d6f1faa3.device
+3.157s dev-disk-by\x2did-nvme\x2dAmazon_Elastic_Block_Store_vol0f219f557bfc41b49_1\x2dpart4.device
+3.157s dev-disk-by\x2dlabel-root.device
+3.151s sys-devices-pci0000:00-0000:00:04.0-nvme-nvme0-nvme0n1-nvme0n1p1.device
+3.151s dev-disk-by\x2did-nvme\x2dAmazon_Elastic_Block_Store_vol0f219f557bfc41b49_1\x2dpart1.device
+3.151s dev-disk-by\x2dpath-pci\x2d0000:00:04.0\x2dnvme\x2d1\x2dpart1.device
+3.151s dev-disk-by\x2did-nvme\x2dAmazon_Elastic_Block_Store_vol0f219f557bfc41b49\x2dpart1.device
+3.151s dev-disk-by\x2dpartuuid-269357c1\x2d2a68\x2dba45\x2d96fd\x2d3054dd657a64.device
+3.151s dev-nvme0n1p1.device
+3.151s dev-disk-by\x2dpartlabel-BIOS\x2dBOOT.device
+3.151s dev-disk-by\x2did-nvme\x2duuid.0fbfa191\x2d8009\x2d5e18\x2d9d68\x2def080a3e3315\x2dpart1.device
+3.150s sys-devices-pci0000:00-0000:00:04.0-nvme-nvme0-nvme0n1.device
+3.150s dev-disk-by\x2ddiskseq-1.device
+3.150s dev-disk-by\x2dpath-pci\x2d0000:00:04.0\x2dnvme\x2d1.device
+3.150s dev-disk-by\x2did-nvme\x2dAmazon_Elastic_Block_Store_vol0f219f557bfc41b49.device
+3.150s dev-disk-by\x2did-nvme\x2dAmazon_Elastic_Block_Store_vol0f219f557bfc41b49_1.device
+3.150s dev-disk-by\x2did-nvme\x2duuid.0fbfa191\x2d8009\x2d5e18\x2d9d68\x2def080a3e3315.device
+3.150s dev-nvme0n1.device
+3.065s dev-disk-by\x2did-nvme\x2duuid.0fbfa191\x2d8009\x2d5e18\x2d9d68\x2def080a3e3315\x2dpart4.device
+3.058s dev-disk-by\x2dpartuuid-7fa173a2\x2de9c4\x2dd14e\x2d9e6f\x2d723f5e98b49a.device
+3.058s dev-disk-by\x2did-nvme\x2dAmazon_Elastic_Block_Store_vol0f219f557bfc41b49\x2dpart3.device
+3.058s dev-disk-by\x2duuid-f1675272\x2db3e2\x2d4e0b\x2d8114\x2d6ddf55bde30f.device
+3.058s dev-disk-by\x2dpartlabel-boot.device
+3.058s dev-disk-by\x2did-nvme\x2duuid.0fbfa191\x2d8009\x2d5e18\x2d9d68\x2def080a3e3315\x2dpart3.device
+3.058s dev-nvme0n1p3.device
+3.058s sys-devices-pci0000:00-0000:00:04.0-nvme-nvme0-nvme0n1-nvme0n1p3.device
+3.058s dev-disk-by\x2dlabel-boot.device
+3.058s dev-disk-by\x2dpath-pci\x2d0000:00:04.0\x2dnvme\x2d1\x2dpart3.device
+3.058s dev-disk-by\x2did-nvme\x2dAmazon_Elastic_Block_Store_vol0f219f557bfc41b49_1\x2dpart3.device
+3.056s dev-disk-by\x2dpartlabel-EFI\x2dSYSTEM.device
+3.056s dev-disk-by\x2did-nvme\x2dAmazon_Elastic_Block_Store_vol0f219f557bfc41b49_1\x2dpart2.device
+3.056s dev-disk-by\x2did-nvme\x2dAmazon_Elastic_Block_Store_vol0f219f557bfc41b49\x2dpart2.device
+3.056s sys-devices-pci0000:00-0000:00:04.0-nvme-nvme0-nvme0n1-nvme0n1p2.device
+3.056s dev-disk-by\x2duuid-7B77\x2d95E7.device
+3.056s dev-disk-by\x2dlabel-EFI\x2dSYSTEM.device
+3.056s dev-nvme0n1p2.device
+3.056s dev-disk-by\x2did-nvme\x2duuid.0fbfa191\x2d8009\x2d5e18\x2d9d68\x2def080a3e3315\x2dpart2.device
+3.056s dev-disk-by\x2dpath-pci\x2d0000:00:04.0\x2dnvme\x2d1\x2dpart2.device
+3.056s dev-disk-by\x2dpartuuid-42568aa5\x2d4d2f\x2d5544\x2dba18\x2d484330be8bdb.device
+2.456s dev-loop0.device
+2.456s sys-devices-virtual-block-loop0.device
+2.442s dev-disk-by\x2ddiskseq-3.device
+2.361s ovs-configuration.service
+1.496s afterburn.service
+ 891ms coreos-update-ca-trust.service
+ 821ms initrd-switch-root.service
+ 797ms crio.service
+ 683ms systemd-udev-settle.service
+ 619ms kubelet.service
+ 500ms initrd-cleanup.service
+ 472ms ldconfig.service
+ 358ms systemd-hwdb-update.service
+ 339ms dracut-initqueue.service
+ 330ms dracut-cmdline.service
+ 305ms ovsdb-server.service
+ 243ms NetworkManager-wait-online.service
+ 210ms systemd-tmpfiles-setup.service
+ 201ms systemd-vconsole-setup.service
+ 177ms dev-hugepages.mount
+ 173ms dev-mqueue.mount
+ 170ms sys-kernel-debug.mount
+ 166ms sys-kernel-tracing.mount
+ 163ms tmp.mount
+ 159ms coreos-printk-quiet.service
+ 148ms kmod-static-nodes.service
+ 145ms lvm2-monitor.service
+ 135ms modprobe@drm.service
+ 131ms modprobe@efi_pstore.service
+ 131ms ovs-vswitchd.service
+ 112ms NetworkManager.service
+ 104ms crio-subid.service
+  95ms boot.mount
+  92ms console-login-helper-messages-gensnippet-ssh-keys.service
+  88ms systemd-udevd.service
+  87ms systemd-tmpfiles-setup-dev.service
+  79ms systemd-udev-trigger.service
+  78ms systemd-modules-load.service
+  76ms rpc-statd.service
+  74ms systemd-network-generator.service
+  67ms chronyd.service
+  61ms systemd-journal-flush.service
+  60ms systemd-logind.service
+  60ms systemd-sysusers.service
+  57ms systemd-remount-fs.service
+  56ms coreos-ignition-write-issues.service
+  56ms coreos-platform-chrony-config.service
+  56ms kubelet-cleanup.service
+  55ms dracut-pre-udev.service
+  53ms dracut-shutdown.service
+  52ms systemd-journald.service
+  48ms auditd.service
+  47ms kubelet-auto-node-size.service
+  45ms sshd.service
+  42ms rpc-statd-notify.service
+  42ms dbus-broker.service
+  40ms initrd-udevadm-cleanup-db.service
+  36ms systemd-fsck@dev-disk-by\x2duuid-f1675272\x2db3e2\x2d4e0b\x2d8114\x2d6ddf55bde30f.service
+  31ms dracut-pre-trigger.service
+  31ms systemd-sysctl.service
+  23ms systemd-journal-catalog-update.service
+  20ms nmstate.service
+  19ms systemd-fsck-root.service
+  19ms rpcbind.service
+  18ms wait-for-primary-ip.service
+  16ms sys-fs-fuse-connections.mount
+  16ms dracut-pre-pivot.service
+  15ms sys-kernel-config.mount
+  15ms nmstate-configuration.service
+  13ms aws-kubelet-providerid.service
+  13ms systemd-update-utmp-runlevel.service
+  12ms node-valid-hostname.service
+  11ms initrd-parse-etc.service
+  10ms dracut-mount.service
+  10ms ovs-delete-transient-ports.service
+  10ms systemd-user-sessions.service
+   9ms rhsmcertd.service
+   9ms systemd-update-utmp.service
+   9ms systemd-boot-update.service
+   8ms modprobe@configfs.service
+   8ms dracut-pre-mount.service
+   7ms modprobe@fuse.service
+   7ms systemd-update-done.service
+   7ms aws-kubelet-nodename.service
+   6ms systemd-random-seed.service
+   5ms ostree-remount.service
+   5ms var.mount
+   1ms openvswitch.service

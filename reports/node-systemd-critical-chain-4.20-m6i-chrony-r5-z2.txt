@@ -1,0 +1,26 @@
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+graphical.target @9.149s
+└─multi-user.target @9.149s
+  └─kubelet.service @8.608s +540ms
+    └─crio.service @7.119s +1.475s
+      └─kubelet-dependencies.target @7.095s
+        └─node-valid-hostname.service @7.072s +15ms
+          └─basic.target @2.844s
+            └─dbus-broker.service @2.807s +32ms
+              └─dbus.socket @2.712s
+                └─sysinit.target @2.694s
+                  └─systemd-update-done.service @2.686s +7ms
+                    └─ldconfig.service @2.205s +471ms
+                      └─local-fs.target @2.187s
+                        └─run-credentials-systemd\x2dtmpfiles\x2dsetup.service.mount @2.213s
+                          └─local-fs-pre.target @2.029s
+                            └─systemd-tmpfiles-setup-dev.service @1.377s +134ms
+                              └─systemd-sysusers.service @1.307s +60ms
+                                └─systemd-remount-fs.service @1.187s +46ms
+                                  └─systemd-fsck-root.service @584542y 2w 2d 20h 1min 48.043s +24ms
+                                    └─dracut-pre-mount.service @584542y 2w 2d 20h 1min 48.031s +8ms
+                                      └─cryptsetup.target @924ms
+                                        └─cryptsetup-pre.target @918ms
+                                          └─clevis-luks-askpass.path @873ms

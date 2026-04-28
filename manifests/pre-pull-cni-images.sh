@@ -7,8 +7,8 @@
 # is the same graphroot CRI-O uses. After reboot, CRI-O finds them
 # cached and skips re-pulling, saving 40-60s on KTR.
 #
-# Image discovery: extracts refs from the release image payload so
-# the script works across OCP versions without hardcoded digests.
+# Pullspecs are hardcoded for OCP 4.20.18. In production the MCO would
+# populate this list from the release payload at render time.
 
 set -o pipefail
 
@@ -24,76 +24,51 @@ if [ ! -f "$PULL_SECRET" ]; then
     exit 0
 fi
 
-# Find the release image from the rendered machine config.
-# Ignition writes this during early boot before MCD runs.
-RELEASE_IMAGE=""
-for mc_file in /etc/machine-config-daemon/currentconfig /etc/mco/currentconfig; do
-    if [ -f "$mc_file" ]; then
-        RELEASE_IMAGE=$(jq -r '.spec.releaseImage // .spec.osImageURL // empty' "$mc_file" 2>/dev/null)
-        if [ -n "$RELEASE_IMAGE" ]; then
-            break
-        fi
-    fi
-done
-
-# Fallback: check the machine-config-daemon pull spec
-if [ -z "$RELEASE_IMAGE" ]; then
-    log "Could not find release image from machine config, trying clusterversion"
-    # On firstboot the kubelet isn't up yet, so we can't query the API.
-    # Try to parse from the ignition-written bootstrap config.
-    RELEASE_IMAGE=$(find /etc -name "*.json" -path "*/machine-config*" -exec \
-        jq -r '.spec.releaseImage // empty' {} \; 2>/dev/null | head -1)
-fi
-
-if [ -z "$RELEASE_IMAGE" ]; then
-    log "Cannot determine release image, exiting"
-    exit 0
-fi
-
-log "Release image: ${RELEASE_IMAGE}"
-
-# Components whose images block NodeReady (ordered by pull time impact)
-COMPONENTS=(
-    "multus-cni"
-    "multus-additional-cni-plugins"    # ~56s pull, critical path
-    "ovn-kubernetes-microshift"        # ovn-k node image
-    "ovn-kubernetes"                   # ~33s pull
-    "network-metrics-daemon"
-    "machine-config-operator"          # MCD daemonset
-    "kube-rbac-proxy"
-    "cluster-node-tuning-operator"
+# Ordered by NodeReady-blocking criticality (largest / most critical first).
+# Digests from: oc adm release info 4.20.18 --pullspecs
+IMAGES=(
+    # ovn-kubernetes — ovnkube-node init + 5 containers, network-node-identity (largest)
+    "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:53ecbed423371b09c2867ebbc1ad10dbc259eb69a1dadb0162a491548a503d8a"
+    # multus-cni — multus ds + multus-additional-cni-plugins container
+    "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:a42120a83db7cd7de76baf52c2336c60be42486a2025e305ab43e50000f3a671"
+    # kube-rbac-proxy — sidecar in ovnkube-node, MCD, network-metrics, dns, node-exporter
+    "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:3366d391aaeff028defbc936ce86754c0d454f9fc89e9e126d1e961bbf66facc"
+    # egress-router-cni — multus-additional-cni-plugins init
+    "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:7ae5539fae6028fff4d116d044a0fcb8cf2780d27093fa5e4cd821a59b7dd291"
+    # container-networking-plugins — multus-additional-cni-plugins init
+    "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:e7ed1c517895be2df46c23ba8915d245bb3bea849f644d8f3e957a2fa2c4e454"
+    # network-interface-bond-cni — multus-additional-cni-plugins init
+    "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:cfb8e5119fd8ee21c3cc8ae827d615ba2ecf8c1d588e5810be309878e4906d8a"
+    # multus-route-override-cni — multus-additional-cni-plugins init
+    "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:27ed497875cf17231c74af201f20f9d0fa994e448c5d50416a43bbb03f0b2578"
+    # multus-whereabouts-ipam-cni — multus-additional-cni-plugins init
+    "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:03b79ad962ab93a071a74331b6e9f164f48407c683ac2fe0508af19c0dd348cf"
+    # network-metrics-daemon
+    "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:cb59e2bf4eefd02d7988c52633584f62c3f145563ffba8dc2bc0294554db1d46"
+    # cluster-node-tuning-operator (tuned daemonset)
+    "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:9db35df4013bf4bd89bd2634dcff8450e0d10e52328635a67281e7f9e3042543"
 )
 
+log "Starting pre-pull of ${#IMAGES[@]} NodeReady-blocking images"
+
 pull_image() {
-    local component="$1"
-    local image_ref
+    local image="$1"
+    local short="${image##*@sha256:}"
+    short="${short:0:12}"
 
-    # Extract the image reference for this component from the release payload
-    image_ref=$(podman run --rm --authfile "$PULL_SECRET" \
-        "$RELEASE_IMAGE" image "${component}" 2>/dev/null) || true
-
-    if [ -z "$image_ref" ]; then
-        log "SKIP ${component}: not found in release payload"
-        return
-    fi
-
-    log "PULL ${component}: ${image_ref}"
-    if podman pull --authfile "$PULL_SECRET" "$image_ref" 2>&1; then
-        log "OK   ${component}: cached"
+    log "PULL ${short}"
+    if podman pull --authfile "$PULL_SECRET" "$image" 2>&1; then
+        log "OK   ${short}"
     else
-        log "FAIL ${component}: pull failed (non-fatal)"
+        log "FAIL ${short} (non-fatal)"
     fi
 }
 
-log "Starting opportunistic pre-pull of ${#COMPONENTS[@]} CNI/node images"
-
-# Pull images in parallel (background jobs) to maximize overlap with MCD rebase.
-# Limit concurrency to avoid saturating the network.
 MAX_PARALLEL=3
 RUNNING=0
 
-for component in "${COMPONENTS[@]}"; do
-    pull_image "$component" &
+for image in "${IMAGES[@]}"; do
+    pull_image "$image" &
     RUNNING=$((RUNNING + 1))
 
     if [ "$RUNNING" -ge "$MAX_PARALLEL" ]; then
@@ -102,8 +77,6 @@ for component in "${COMPONENTS[@]}"; do
     fi
 done
 
-# Wait for remaining pulls, but don't block forever.
-# If the system is rebooting, SIGTERM will kill us — that's fine.
 wait 2>/dev/null || true
 
 log "Pre-pull complete ($(podman images --format '{{.Repository}}' 2>/dev/null | wc -l) images cached)"

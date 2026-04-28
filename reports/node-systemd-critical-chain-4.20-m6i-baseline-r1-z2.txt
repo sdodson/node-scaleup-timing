@@ -1,0 +1,28 @@
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+graphical.target @2min 23.556s
+└─multi-user.target @2min 23.556s
+  └─kubelet.service @2min 23.169s +386ms
+    └─crio.service @2min 21.844s +1.312s
+      └─kubelet-dependencies.target @2min 21.835s
+        └─chrony-wait.service @2min 14.785s +7.049s
+          └─chronyd.service @2min 14.709s +62ms
+            └─coreos-platform-chrony-config.service @2min 14.652s +44ms
+              └─basic.target @2min 14.636s
+                └─dbus-broker.service @2min 14.605s +27ms
+                  └─dbus.socket @2min 14.587s
+                    └─sysinit.target @2min 14.580s
+                      └─systemd-update-done.service @2min 14.572s +7ms
+                        └─ldconfig.service @2min 14.176s +385ms
+                          └─local-fs.target @2min 14.163s
+                            └─run-credentials-systemd\x2dtmpfiles\x2dsetup.service.mount @2min 14.185s
+                              └─local-fs-pre.target @1.912s
+                                └─systemd-tmpfiles-setup-dev.service @1.242s +117ms
+                                  └─systemd-sysusers.service @1.162s +68ms
+                                    └─systemd-remount-fs.service @1.067s +37ms
+                                      └─systemd-fsck-root.service @584542y 2w 2d 20h 1min 48.156s +19ms
+                                        └─dracut-pre-mount.service @584542y 2w 2d 20h 1min 48.145s +7ms
+                                          └─cryptsetup.target @807ms
+                                            └─cryptsetup-pre.target @802ms
+                                              └─clevis-luks-askpass.path @759ms
