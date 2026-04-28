@@ -125,7 +125,7 @@ The 124 inconsistent packages fall into recognizable patterns:
 
 ## Z-Stream Bisection: First Half vs Second Half
 
-We extracted RPM lists from the midpoint of each z-stream lifecycle (4.12.43, 4.14.32, 4.16.30, 4.18.19, 4.19.14) to determine whether updates are front-loaded or back-loaded.
+We extracted RPM lists from the midpoint of each z-stream lifecycle (4.12.43, 4.14.32, 4.16.30, 4.18.19, 4.19.14) to determine whether updates are front-loaded or back-loaded. Note that the "midpoint" here is by z-stream number, not by calendar time — see the next section for calendar-based analysis.
 
 ### Update Counts by Half
 
@@ -142,11 +142,9 @@ We extracted RPM lists from the midpoint of each z-stream lifecycle (4.12.43, 4.
 | 4.19 | .0 → .14 (1st half) | 434 | 132 | 0 | 4 | 23% |
 |        | .14 → .29 (2nd half) | 434 | 132 | 4 | 0 | 23% |
 
-### Key Observations
+### Update Overlap Between Halves
 
-**Updates are back-loaded, not front-loaded.** In 4 of 5 versions, the second half of the z-stream lifecycle has more updated packages than the first half. The effect is strongest in 4.18 (2x ratio) and 4.16 (1.33x). Only 4.19 is evenly split — but it also has the fewest z-streams (29) so may not have had time for the pattern to emerge.
-
-**Most updated packages get updated in both halves.** The overlap between first-half and second-half updates is substantial — these are packages that receive continuous CVE/bugfix attention throughout the lifecycle:
+Most updated packages get updated in both halves — these are packages that receive continuous CVE/bugfix attention throughout the lifecycle:
 
 | Version | 1st half | 2nd half | Both halves | 1st only | 2nd only |
 |---------|----------|----------|-------------|----------|----------|
@@ -156,7 +154,7 @@ We extracted RPM lists from the midpoint of each z-stream lifecycle (4.12.43, 4.
 | 4.18    | 81       | 164      | 64          | 17       | 100      |
 | 4.19    | 132      | 132      | 71          | 61       | 61       |
 
-**The "2nd half only" bucket is consistently larger than "1st half only"**, meaning more packages transition from unchanged to updated in the second half than settle down after an early update. This suggests ongoing CVE discovery and RHEL erratum flow accelerates as a release matures.
+The "2nd half only" bucket is consistently larger than "1st half only", meaning more packages transition from unchanged to updated in the second half than settle down after an early update.
 
 ### Consistently Late-Arriving Packages
 
@@ -167,6 +165,42 @@ Packages that are only updated in the second half across 4+ versions — these c
 ### Consistently Front-Loaded Packages
 
 Only 3 packages are consistently updated in the first half but not the second (in 3/5 versions): `containers-common`, `rpm-ostree`, `rpm-ostree-libs`. These are OCP-specific components that stabilize early.
+
+---
+
+## Calendar-Based Drift Analysis (4.12)
+
+The z-stream bisection above splits by z-stream number, but OpenShift z-stream cadence is not uniform: releases ship weekly early in the lifecycle, biweekly as the release matures, and every ~4 weeks during the EUS tail. For 4.12, the lifecycle spans 3.2 years (Jan 2023 – Apr 2026), and the cadence shift is dramatic:
+
+| Period | Range | Date Range | Months | Z-streams | Cadence | Updated | Upd/month |
+|--------|-------|------------|-------:|----------:|--------:|--------:|----------:|
+| 1 | .0 → .25   | Jan 2023 – Jul 2023 | 6.0  | 25 |  7d/z | 82  | 13.7 |
+| 2 | .25 → .50  | Jul 2023 – Feb 2024 | 7.1  | 25 |  9d/z | 141 | 19.9 |
+| 3 | .50 → .60  | Feb 2024 – Jun 2024 | 4.2  | 10 | 13d/z | 84  | 20.0 |
+| 4 | .60 → .70  | Jun 2024 – Nov 2024 | 5.3  | 10 | 16d/z | 44  |  8.3 |
+| 5 | .70 → .80  | Nov 2024 – Sep 2025 | 9.2  | 10 | 28d/z | 68  |  7.4 |
+| 6 | .80 → .87  | Sep 2025 – Apr 2026 | 6.9  |  7 | 30d/z | 63  |  9.1 |
+
+### Cumulative Drift from GA
+
+| Range | Months from GA | Total updated | Still at GA | % drifted |
+|-------|---------------:|--------------:|------------:|----------:|
+| .0 → .25  |  6.0 |  82 | 421 | 16% |
+| .0 → .50  | 13.1 | 165 | 337 | 33% |
+| .0 → .60  | 17.2 | 173 | 327 | 35% |
+| .0 → .70  | 22.5 | 176 | 324 | 35% |
+| .0 → .80  | 31.7 | 184 | 316 | 37% |
+| .0 → .87  | 38.6 | 188 | 312 | 38% |
+
+### Key Observations
+
+**Most drift happens in the first year.** By 4.12.50 (~13 months), 33% of packages have drifted from their GA version. The remaining 25 months only add another 5 percentage points (33% → 38%). This makes sense: the first year covers the RHEL 8.x errata batch cycle, and most security-critical packages receive their updates within that window.
+
+**The per-month update rate peaks in months 6-14, then drops sharply.** Periods 2 and 3 show ~20 newly-updated packages per month, while periods 4-6 drop to 7-9 per month. This is the combined effect of: (a) RHEL errata flow slowing for older RHEL minor releases, (b) most CVE-affected packages having already been updated, and (c) the longer z-stream cadence meaning fewer opportunities to ship updates.
+
+**The z-stream number midpoint (4.12.43) is actually at month 10, not the calendar midpoint.** The first 43 z-streams span only 10 months (weekly cadence), while the last 44 span 28 months (biweekly → monthly). Bisecting by z-stream number is misleading — the "second half" has nearly 3x more calendar time. When normalized by calendar time, the first half actually has a *higher* update rate per month (13.1 updates/month for .0→.43) than the second half (8.5 updates/month for .43→.87).
+
+**Boot image drift plateaus.** A cluster installed with the 4.12.0 boot image that is running 4.12.87 has 188 packages (38%) where the boot image version differs from the running version. But 165 of those 188 packages (88%) had already drifted by 4.12.50. The last 2+ years of the lifecycle only added 23 more drifted packages.
 
 ---
 
