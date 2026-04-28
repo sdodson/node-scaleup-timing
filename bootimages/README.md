@@ -153,14 +153,16 @@ To correct for this, we selected the z-stream release closest to each 6-month ca
 
 ### Cumulative Drift from GA
 
-| Range | Months from GA | Total updated | Still at GA | % drifted |
-|-------|---------------:|--------------:|------------:|----------:|
-| .0 → .25  |  6.0 |  82 | 421 | 16% |
-| .0 → .47  | 12.0 | 141 | 361 | 28% |
-| .0 → .60  | 17.2 | 173 | 327 | 35% |
-| .0 → .72  | 24.6 | 179 | 321 | 36% |
-| .0 → .78  | 29.7 | 181 | 319 | 36% |
-| .0 → .87  | 38.6 | 188 | 312 | 38% |
+The "% stable from prev" column shows what percentage of packages were unchanged compared to the previous checkpoint — not from GA. A package updated in window 1 that stays at its window-1 version through window 3 counts as "stable" in windows 2 and 3, even though it has drifted from GA.
+
+| Range | Months from GA | Total updated | Still at GA | % drifted | % stable from prev |
+|-------|---------------:|--------------:|------------:|----------:|-------------------:|
+| .0 → .25  |  6.0 |  82 | 421 | 16% | 84% |
+| .0 → .47  | 12.0 | 141 | 361 | 28% | 78% |
+| .0 → .60  | 17.2 | 173 | 327 | 35% | 77% |
+| .0 → .72  | 24.6 | 179 | 321 | 36% | 89% |
+| .0 → .78  | 29.7 | 181 | 319 | 36% | 93% |
+| .0 → .87  | 38.6 | 188 | 312 | 38% | 84% |
 
 ### Key Observations
 
