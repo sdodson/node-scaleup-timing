@@ -95,7 +95,7 @@ These are the packages that **always** receive z-stream updates:
 
 ### Never-Updated Packages (315 packages)
 
-These form the stable core and include foundational packages that rarely receive CVE fixes or feature updates within a RHEL minor release: bash, coreutils, findutils, grep, sed, gawk, util-linux, perl modules, python3 standard library bindings, fuse, clevis/jose/luksmeta (LUKS), and many small libraries.
+These form the stable core and include foundational packages that rarely receive CVE fixes or feature updates within a RHEL minor release: bash, coreutils, findutils, grep, sed, gawk, util-linux, perl modules, python3 standard library bindings, fuse, clevis/jose/luksmeta (LUKS), and many small libraries. See [`packages-never-updated-in-zstreams.txt`](packages-never-updated-in-zstreams.txt) for the full list.
 
 ---
 
@@ -127,51 +127,6 @@ The 124 inconsistent packages fall into recognizable patterns:
 - **1/5 unchanged (29 packages):** Nearly always updated, with one version where the GA version happened to survive — e.g., `dracut` (unchanged only in 4.12), `libgcc`/`libstdc++` (unchanged only in 4.19).
 
 - **2-3/5 unchanged (36 packages):** Genuinely unpredictable — e.g., the `perl-*` interpreter packages shifted from stable in 4.12/4.14 to always-updated starting in 4.16; `polkit` went the other direction. These often reflect a RHEL rebase boundary where upstream cadence changed.
-
----
-
-## Z-Stream Bisection: First Half vs Second Half
-
-We extracted RPM lists from the midpoint of each z-stream lifecycle (4.12.43, 4.14.32, 4.16.30, 4.18.19, 4.19.14) to determine whether updates are front-loaded or back-loaded. Note that the "midpoint" here is by z-stream number, not by calendar time — see the next section for calendar-based analysis.
-
-### Update Counts by Half
-
-| Version | Range | Unchanged | Updated | Added | Removed | % Updated |
-|---------|-------|----------:|--------:|------:|--------:|----------:|
-| 4.12 | .0 → .43 (1st half) | 372 | 131 | 0 | 0 | 26% |
-|        | .43 → .87 (2nd half) | 341 | 159 | 1 | 3 | 31% |
-| 4.14 | .0 → .32 (1st half) | 395 | 122 | 1 | 0 | 23% |
-|        | .32 → .64 (2nd half) | 372 | 144 | 3 | 2 | 27% |
-| 4.16 | .0 → .30 (1st half) | 409 | 133 | 0 | 0 | 24% |
-|        | .30 → .60 (2nd half) | 365 | 177 | 0 | 0 | 32% |
-| 4.18 | .0 → .19 (1st half) | 483 | 81 | 0 | 0 | 14% |
-|        | .19 → .38 (2nd half) | 399 | 164 | 1 | 1 | 29% |
-| 4.19 | .0 → .14 (1st half) | 434 | 132 | 0 | 4 | 23% |
-|        | .14 → .29 (2nd half) | 434 | 132 | 4 | 0 | 23% |
-
-### Update Overlap Between Halves
-
-Most updated packages get updated in both halves — these are packages that receive continuous CVE/bugfix attention throughout the lifecycle:
-
-| Version | 1st half | 2nd half | Both halves | 1st only | 2nd only |
-|---------|----------|----------|-------------|----------|----------|
-| 4.12    | 131      | 159      | 101         | 30       | 58       |
-| 4.14    | 122      | 144      | 99          | 23       | 45       |
-| 4.16    | 133      | 177      | 105         | 28       | 72       |
-| 4.18    | 81       | 164      | 64          | 17       | 100      |
-| 4.19    | 132      | 132      | 71          | 61       | 61       |
-
-The "2nd half only" bucket is consistently larger than "1st half only", meaning more packages transition from unchanged to updated in the second half than settle down after an early update.
-
-### Consistently Late-Arriving Packages
-
-Packages that are only updated in the second half across 4+ versions — these consistently receive their first z-stream update late in the lifecycle:
-
-- `gnupg2` (5/5), `bsdtar`/`libarchive` (4/5), `jq` (4/5), `libssh` (4/5), `rsync` (4/5), `vim-minimal` (4/5), `nftables` (4/5), `irqbalance` (4/5), `libbrotli` (4/5), `libxslt` (4/5)
-
-### Consistently Front-Loaded Packages
-
-Only 3 packages are consistently updated in the first half but not the second (in 3/5 versions): `containers-common`, `rpm-ostree`, `rpm-ostree-libs`. These are OCP-specific components that stabilize early.
 
 ---
 
