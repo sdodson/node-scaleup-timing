@@ -66,6 +66,10 @@ Every release cycle swaps Open vSwitch versions, always done mid-z-stream:
 | 4.18.0 → 4.18.38 | 3.4 → 3.5        |
 | 4.19.0 → 4.19.29 | 3.5 (unchanged)   |
 
+### 6. Boot Image Is a Near-Exact Subset of the Node Image
+
+Comparing the 4.19 boot image (VMDK, 557 packages) to the 4.19.0 GA node image (568 packages): all 557 boot image packages exist in the node image, with **546 at identical versions**. The node image adds **11 OCP-specific packages** not present in the boot image (cri-o, cri-tools, openshift-clients, openshift-kubelet, conmon-rs, NetworkManager-ovs, openvswitch3.5, openvswitch-selinux-extra-policy, cloud credential providers, unbound-libs) and has **11 packages at newer versions** (kernel, NetworkManager and subpackages, nmstate). The boot image contains no packages absent from the node image.
+
 ---
 
 ## Package Update Frequency
