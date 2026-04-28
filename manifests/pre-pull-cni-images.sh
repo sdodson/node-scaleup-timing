@@ -1,7 +1,9 @@
 #!/bin/bash
 # Pre-pull NodeReady-blocking container images during firstboot.
-# Runs in parallel with MCD firstboot (rpm-ostree rebase) to overlap
-# network-bound image pulls with I/O-bound rebase work.
+# Runs in parallel with MCD firstboot (rpm-ostree rebase) with
+# MAX_PARALLEL=1 to reduce network contention with MCD's OS image
+# download. Serialized pulls still overlap with MCD's I/O-bound
+# rebase work.
 #
 # Images are pulled via podman into /var/lib/containers/storage, which
 # is the same graphroot CRI-O uses. After reboot, CRI-O finds them
@@ -49,7 +51,7 @@ IMAGES=(
     "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:9db35df4013bf4bd89bd2634dcff8450e0d10e52328635a67281e7f9e3042543"
 )
 
-log "Starting pre-pull of ${#IMAGES[@]} NodeReady-blocking images"
+log "Starting pre-pull of ${#IMAGES[@]} NodeReady-blocking images (serial)"
 
 pull_image() {
     local image="$1"
@@ -64,19 +66,8 @@ pull_image() {
     fi
 }
 
-MAX_PARALLEL=3
-RUNNING=0
-
 for image in "${IMAGES[@]}"; do
-    pull_image "$image" &
-    RUNNING=$((RUNNING + 1))
-
-    if [ "$RUNNING" -ge "$MAX_PARALLEL" ]; then
-        wait -n 2>/dev/null || true
-        RUNNING=$((RUNNING - 1))
-    fi
+    pull_image "$image"
 done
-
-wait 2>/dev/null || true
 
 log "Pre-pull complete ($(podman images --format '{{.Repository}}' 2>/dev/null | wc -l) images cached)"

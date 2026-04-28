@@ -226,42 +226,96 @@ Both MachineConfigs applied together: `99-worker-chrony-wait-skip-reboot` + `99-
 - **MCD regression amplified**: Mean 94.0s vs 52.0s baseline (+81%). With both MCs adding content, the rendered config is larger. Network contention from pre-pull during Boot 1 further slows MCD.
 - **Total time not improved**: Despite eliminating 52.5s of Boot 2 time (11.7s chrony + 40.8s KTR), the MCD slowdown (+42.0s) absorbs most of the savings. The net total is 13s worse than baseline.
 
+## Phase 5: Pre-pull CNI Serial (MAX_PARALLEL=1)
+
+Re-test of the pre-pull CNI optimization with serial image pulls instead of MAX_PARALLEL=3. The hypothesis is that reducing pull concurrency will reduce network contention with MCD during Boot 1, yielding a better total time while preserving the KTR reduction.
+
+Changes from Phase 3:
+- Removed `systemd-inhibit` wrapper (no longer needed without rebase-wait logic)
+- Removed `logind.conf.d` dropin for `InhibitDelayMaxSec`
+- Script pulls images serially (one at a time) instead of 3 concurrent pulls
+- `TimeoutStartSec` reverted from 600 to 300
+
+### Summary (n=15)
+
+| Phase | Mean | Stdev | Min | Max | Δ vs Baseline |
+|---|---|---|---|---|---|
+| **Total** | **240.8s** | 16.4 | 215 | 266 | **+20.3s (+9%)** |
+| VM Provisioning | 23.5s | 2.8 | 17 | 28 | +0.6s |
+| Boot 1 (total) | 151.3s | 13.1 | 131 | 173 | +30.7s (+25%) |
+| — MCD firstboot | 98.5s | 8.3 | 85 | 116 | +46.5s (+89%) |
+| —— rpm-ostree rebase | 54.3s | 8.0 | 36 | 73 | +14.7s (+37%) |
+| Reboot | 27.2s | 4.9 | 18 | 33 | +11.8s |
+| Boot 2 SA | 19.0s | 3.0 | 15.8 | 25.5 | −1.8s (−9%) |
+| — chrony-wait | 9.7s | 2.9 | 7.0 | 16.1 | −2.0s (−17%) |
+| KTR | **19.9s** | 1.5 | 17 | 23 | **−41.7s (−68%)** |
+| Pre-pull duration | 81.7s | 8.6 | 63 | 98 | — |
+
+### All Data Points
+
+| Sample | Total | VM Prov | Boot 1 | MCD FB | Rebase | Reboot | SA | chrony | KTR | Pre-pull |
+|---|---|---|---|---|---|---|---|---|---|---|
+| r1-z1 | 224 | 23 | 143 | 92 | 36 | 23 | 15.8 | 7.0 | 19 | 63 |
+| r1-z2 | 252 | 17 | 173 | 107 | 47 | 25 | 17.0 | 7.1 | 20 | 96 |
+| r1-z3 | 262 | 26 | 168 | 97 | 57 | 32 | 16.5 | 7.0 | 19 | 98 |
+| r2-z1 | 266 | 23 | 172 | 116 | 73 | 32 | 16.5 | 7.0 | 23 | 79 |
+| r2-z2 | 263 | 28 | 160 | 102 | 56 | 33 | 22.1 | 12.1 | 20 | 82 |
+| r2-z3 | 222 | 22 | 132 | 85 | 52 | 25 | 21.7 | 13.1 | 21 | 81 |
+| r3-z1 | 229 | 22 | 143 | 94 | 49 | 18 | 25.5 | 16.1 | 20 | 80 |
+| r3-z2 | 215 | 26 | 131 | 92 | 57 | 19 | 17.3 | 8.1 | 22 | 76 |
+| r3-z3 | 240 | 24 | 146 | 95 | 54 | 31 | 19.7 | 10.1 | 19 | 82 |
+| r4-z1 | 224 | 21 | 143 | 96 | 54 | 24 | 15.9 | 7.0 | 20 | 83 |
+| r4-z2 | 249 | 24 | 152 | 102 | 58 | 31 | 23.6 | 14.1 | 18 | 84 |
+| r4-z3 | 230 | 26 | 142 | 87 | 48 | 27 | 17.1 | 9.0 | 18 | 71 |
+| r5-z1 | 252 | 26 | 154 | 100 | 58 | 32 | 18.7 | 9.0 | 21 | 86 |
+| r5-z2 | 239 | 20 | 153 | 106 | 61 | 31 | 18.4 | 9.1 | 17 | 86 |
+| r5-z3 | 245 | 24 | 157 | 107 | 55 | 25 | 18.2 | 9.0 | 21 | 78 |
+
+### Notes
+
+- **KTR near floor with excellent consistency**: Mean 19.9s with σ=1.5s (vs Phase 3's 23.9s with σ=10.1s). Serial pulls ensure all 10 images are fully cached before reboot. The remaining KTR is CSR approval + non-pre-pulled images.
+- **Serial pulls still cause network contention**: MCD firstboot mean 98.5s vs baseline 52.0s (+89%). However, the contention is concentrated in MCD's pre-rebase phase (image pulls, extensions copy), not during the rebase itself. The rpm-ostree rebase takes 54.3s (vs baseline 39.6s, +37%), compared to Phase 3's implied +62% contention with MAX_PARALLEL=3.
+- **Pre-pull timing**: Serial pulls took 81.7s mean (vs Phase 3's ~60s with MAX_PARALLEL=3). The serial pre-pull overlaps primarily with MCD's network-bound work (MCD image pull + extensions), then finishes around the time rebase starts. This means the rebase runs with less network contention than Phase 3.
+- **Total time increase**: +20.3s vs baseline (+9%). The KTR savings (−41.7s) are offset by MCD slowdown (+46.5s) and reboot increase (+11.8s). The reboot increase may reflect the additional storage I/O from having 10 extra images in `/var/lib/containers/storage`.
+- **MCP rolling update may have contributed to contention**: During this test, the existing worker nodes were being updated with the new rendered config (chrony-wait MC had just been removed). This network activity could have inflated the MCD firstboot times beyond what serial pre-pull alone would cause.
+
 ## Comparison Summary
 
-| Config | n | Total | SA | chrony | KTR | MCD |
+| Config | n | Total | SA | chrony | KTR | MCD FB |
 |---|---|---|---|---|---|---|
 | Baseline | 14 | **220.5s** | 20.8s | 11.7s | 61.6s | 52.0s |
 | chrony-wait skip | 15 | **215.4s** | 13.1s | 0.0s | 44.1s | 69.3s |
-| Pre-pull CNI | 7 | **233.6s** | 18.1s | 9.3s | 23.9s | 84.0s |
-| Both | 4 | **233.5s** | 12.3s | 0.0s | 20.8s | 94.0s |
+| Pre-pull CNI (×3) | 7 | **233.6s** | 18.1s | 9.3s | 23.9s | 84.0s |
+| Both (×3) | 4 | **233.5s** | 12.3s | 0.0s | 20.8s | 94.0s |
+| Pre-pull serial (×1) | 15 | **240.8s** | 19.0s | 9.7s | **19.9s** | 98.5s |
 
-### Phase Breakdown: Baseline vs Both
+### KTR Comparison
 
 ```
-                    Baseline                              Both
-VM Provisioning  ████ 22.9s (10%)                ████ ~23s (10%)
-Boot 1 (total)   ████████████████████████ 120.6s  ████████████████████████████████ ~160s (69%)
-  MCD firstboot   █████████████ 52.0s              ██████████████████████████ 94.0s
-Reboot           ██████ 15.4s (7%)               ██████ ~15s (6%)
-Boot 2           ████████ 20.8s (9%)             ████ 12.3s (5%)
-  chrony-wait     ██████ 11.7s                     ▏ 0s
-KTR              ████████████████████████ 61.6s   ████████ 20.8s (9%)
-────────────────────────────────────────────────────────────────
-Total            ████████████████████████████████████████████ 220.5s  ████████████████████████████████████████████████ 233.5s
+Baseline         ████████████████████████████████████████████████████████████████ 61.6s  σ=5.4
+chrony-wait skip ████████████████████████████████████████████ 44.1s  σ=5.3
+Pre-pull ×3      ████████████████████████ 23.9s  σ=10.1
+Both ×3          ████████████████████ 20.8s  σ=1.3
+Pre-pull ×1      ████████████████████ 19.9s  σ=1.5
 ```
 
 ### Key Findings
 
 1. **chrony-wait skip is a clean win**: −11.7s with no side effects. The `ConditionPathExists=!/var/lib/chrony/drift` drop-in is simple, reliable, and zero-cost. **Recommended for production.**
 
-2. **Pre-pull CNI trades Boot 1 time for Boot 2 time**: KTR drops 61.6s → 20.8s (−66%), but MCD firstboot increases 52.0s → 94.0s (+81%) due to network contention. **Net total time is unchanged.** However, this makes the boot process more *robust* — image pulls are no longer on the critical path after reboot. If registry latency varies, baseline KTR varies proportionally; with pre-pull, KTR is consistently ~20s.
+2. **Pre-pull CNI reduces KTR by 68%** (61.6s → 19.9s) with serial pulls, but increases MCD firstboot by 89% due to network contention during Boot 1. Net total time is +20s (9%) worse than baseline.
 
-3. **MCD network contention is the limiting factor**: The pre-pull service and MCD rebase compete for network bandwidth during Boot 1. With MAX_PARALLEL=3 image pulls running alongside rpm-ostree rebase, the MCD phase nearly doubles. A production implementation should either:
-   - **Sequence intelligently**: Start pre-pull only after MCD finishes the OS image pull but before the reboot, or
-   - **Use a lower concurrency**: MAX_PARALLEL=1 would reduce contention at the cost of less overlap, or
-   - **Integrate into MCO**: The MCO could pull images as part of its own workflow, avoiding concurrency issues entirely.
+3. **Serial vs parallel pre-pull**:
+   - Serial (×1): KTR 19.9s (σ=1.5), MCD 98.5s, Total 240.8s
+   - Parallel (×3): KTR 23.9s (σ=10.1), MCD 84.0s, Total 233.6s
+   - Serial yields lower and more consistent KTR (all images guaranteed cached) but higher total due to longer pull duration and more overlap with MCD network operations.
 
-4. **Combined optimizations save ~52.5s of Boot 2 time** (chrony-wait 11.7s + KTR 40.8s) but add ~42s to Boot 1 MCD, for a net effect of ~+13s on total. The value proposition depends on whether Boot 2 latency (user-visible, on the critical path to workload scheduling) is valued more than Boot 1 latency (background, before the node exists in the cluster).
+4. **Network contention is unavoidable with a systemd unit approach**: Whether serial or parallel, the pre-pull service competes with MCD for network bandwidth during Boot 1. The contention shifts from MCD's rebase phase (with parallel pulls) to MCD's pre-rebase phase (with serial pulls), but doesn't disappear. **The only way to eliminate contention is MCO integration** — pulling images after `applyOSChanges()` returns and before `reboot()` is called (see MCO integration notes).
+
+5. **Recommended production approach**:
+   - **Short-term**: chrony-wait skip only (−11.7s, zero risk)
+   - **Medium-term**: Pre-pull with serial pulls + chrony-wait skip. Total is ~20s worse than baseline, but KTR is 68% lower and highly consistent — valuable for workload scheduling predictability.
+   - **Long-term**: Integrate pre-pull into MCO source code, pulling images after rpm-ostree rebase completes but before MCD triggers reboot. This eliminates network contention entirely and should yield both lower KTR and lower total.
 
 ## Test Timeline
 
@@ -269,5 +323,6 @@ Total            █████████████████████
 |---|---|---|---|
 | Baseline | 2026-04-27 | 15:05–17:20 | Complete (15 samples) |
 | chrony-wait skip | 2026-04-27 | 18:50–20:30 | Complete (15 samples) |
-| Pre-pull CNI | 2026-04-27–28 | 22:28–00:43 | Complete (7 usable samples) |
-| Both | 2026-04-28 | 01:05–03:37 | Complete (5 samples) |
+| Pre-pull CNI (×3) | 2026-04-27–28 | 22:28–00:43 | Complete (7 usable samples) |
+| Both (×3) | 2026-04-28 | 01:05–03:37 | Complete (5 samples) |
+| Pre-pull serial (×1) | 2026-04-28 | 14:10–17:13 | Complete (15 samples) |
