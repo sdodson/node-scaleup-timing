@@ -170,37 +170,43 @@ Only 3 packages are consistently updated in the first half but not the second (i
 
 ## Calendar-Based Drift Analysis (4.12)
 
-The z-stream bisection above splits by z-stream number, but OpenShift z-stream cadence is not uniform: releases ship weekly early in the lifecycle, biweekly as the release matures, and every ~4 weeks during the EUS tail. For 4.12, the lifecycle spans 3.2 years (Jan 2023 – Apr 2026), and the cadence shift is dramatic:
+The z-stream bisection above splits by z-stream number, but OpenShift z-stream cadence is not uniform: releases ship weekly early in the lifecycle, biweekly as the release matures, and every ~4 weeks during the EUS tail. For 4.12, the lifecycle spans 3.2 years (Jan 2023 – Apr 2026).
 
-| Period | Range | Date Range | Months | Z-streams | Cadence | Updated | Upd/month |
-|--------|-------|------------|-------:|----------:|--------:|--------:|----------:|
-| 1 | .0 → .25   | Jan 2023 – Jul 2023 | 6.0  | 25 |  7d/z | 82  | 13.7 |
-| 2 | .25 → .50  | Jul 2023 – Feb 2024 | 7.1  | 25 |  9d/z | 141 | 19.9 |
-| 3 | .50 → .60  | Feb 2024 – Jun 2024 | 4.2  | 10 | 13d/z | 84  | 20.0 |
-| 4 | .60 → .70  | Jun 2024 – Nov 2024 | 5.3  | 10 | 16d/z | 44  |  8.3 |
-| 5 | .70 → .80  | Nov 2024 – Sep 2025 | 9.2  | 10 | 28d/z | 68  |  7.4 |
-| 6 | .80 → .87  | Sep 2025 – Apr 2026 | 6.9  |  7 | 30d/z | 63  |  9.1 |
+To correct for this, we selected the z-stream release closest to each 6-month calendar boundary and compared packages within each window. The "Updated" column counts packages whose version changed *within that specific window* — not cumulative from GA.
+
+### Per-Window Package Updates
+
+| Window | Range | Date Range | Months | Z-streams | Cadence | Updated | Added | Removed |
+|--------|-------|------------|-------:|----------:|--------:|--------:|------:|--------:|
+| 1 | .0 → .25  | Jan 2023 – Jul 2023 |  6.0 | 25 |  7d/z |  82 | 0 | 0 |
+| 2 | .25 → .47 | Jul 2023 – Jan 2024 |  6.0 | 22 |  8d/z | 112 | 1 | 1 |
+| 3 | .47 → .60 | Jan 2024 – Jun 2024 |  5.3 | 13 | 12d/z | 117 | 0 | 2 |
+| 4 | .60 → .72 | Jun 2024 – Jan 2025 |  7.4 | 12 | 19d/z |  54 | 0 | 0 |
+| 5 | .72 → .78 | Jan 2025 – Jul 2025 |  5.1 |  6 | 26d/z |  36 | 0 | 0 |
+| 6 | .78 → .87 | Jul 2025 – Apr 2026 |  8.9 |  9 | 30d/z |  80 | 0 | 0 |
 
 ### Cumulative Drift from GA
 
 | Range | Months from GA | Total updated | Still at GA | % drifted |
 |-------|---------------:|--------------:|------------:|----------:|
 | .0 → .25  |  6.0 |  82 | 421 | 16% |
-| .0 → .50  | 13.1 | 165 | 337 | 33% |
+| .0 → .47  | 12.0 | 141 | 361 | 28% |
 | .0 → .60  | 17.2 | 173 | 327 | 35% |
-| .0 → .70  | 22.5 | 176 | 324 | 35% |
-| .0 → .80  | 31.7 | 184 | 316 | 37% |
+| .0 → .72  | 24.6 | 179 | 321 | 36% |
+| .0 → .78  | 29.7 | 181 | 319 | 36% |
 | .0 → .87  | 38.6 | 188 | 312 | 38% |
 
 ### Key Observations
 
-**Most drift happens in the first year.** By 4.12.50 (~13 months), 33% of packages have drifted from their GA version. The remaining 25 months only add another 5 percentage points (33% → 38%). This makes sense: the first year covers the RHEL 8.x errata batch cycle, and most security-critical packages receive their updates within that window.
+**Updates peak in months 6-18, then drop sharply.** Windows 2 and 3 each see 112-117 packages updated — the highest per-window counts in the lifecycle. This is when the bulk of RHEL errata for security-critical packages (kernel, glibc, openssl, curl, etc.) are flowing. By contrast, windows 4 and 5 drop to 54 and 36 updates respectively.
 
-**The per-month update rate peaks in months 6-14, then drops sharply.** Periods 2 and 3 show ~20 newly-updated packages per month, while periods 4-6 drop to 7-9 per month. This is the combined effect of: (a) RHEL errata flow slowing for older RHEL minor releases, (b) most CVE-affected packages having already been updated, and (c) the longer z-stream cadence meaning fewer opportunities to ship updates.
+**Window 6 shows a late resurgence.** The final window (.78 → .87, Jul 2025 – Apr 2026) jumps back to 80 updated packages after the lull in windows 4-5. This coincides with late-lifecycle CVEs hitting packages that had been stable for over a year.
 
-**The z-stream number midpoint (4.12.43) is actually at month 10, not the calendar midpoint.** The first 43 z-streams span only 10 months (weekly cadence), while the last 44 span 28 months (biweekly → monthly). Bisecting by z-stream number is misleading — the "second half" has nearly 3x more calendar time. When normalized by calendar time, the first half actually has a *higher* update rate per month (13.1 updates/month for .0→.43) than the second half (8.5 updates/month for .43→.87).
+**Boot image drift plateaus after 18 months.** By 4.12.60 (~17 months), 35% of packages have drifted from GA. The remaining 21 months only add 3 more percentage points (35% → 38%). The first 18 months account for 92% of all eventual drift.
 
-**Boot image drift plateaus.** A cluster installed with the 4.12.0 boot image that is running 4.12.87 has 188 packages (38%) where the boot image version differs from the running version. But 165 of those 188 packages (88%) had already drifted by 4.12.50. The last 2+ years of the lifecycle only added 23 more drifted packages.
+**The z-stream number midpoint (4.12.43) is actually at month 10, not the calendar midpoint.** The first 43 z-streams span only 10 months (weekly cadence), while the last 44 span 28 months (biweekly → monthly). Bisecting by z-stream number is misleading — the "second half" has nearly 3x more calendar time.
+
+**Z-stream cadence slows 4x over the lifecycle.** Early releases ship every 7-8 days; by the EUS tail it's every 26-30 days. This means each late z-stream carries more accumulated package changes than an early one, even though fewer packages are changing per month overall.
 
 ---
 
