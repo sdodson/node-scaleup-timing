@@ -1,13 +1,20 @@
-# RHCOS Boot Image Package Evolution Analysis
+# RHCOS Node Image Package Evolution Analysis
 
 **Date:** April 27, 2026  
-**Scope:** OCP 4.12 through 4.19 — comparing `.0` GA releases to their latest z-stream, plus cross-major and VMDK comparisons
+**Scope:** OCP 4.12 through 4.19 — comparing `.0` GA releases to their latest z-stream, plus cross-major and boot image comparisons
+
+---
+
+## Terminology
+
+- **Node Image:** The RHCOS container image shipped with each OCP release, used during MCD firstboot to rebase the OS via rpm-ostree. Each z-stream release contains a node image. The `rpms-{version}.txt` files in this analysis are extracted from node images.
+- **Boot Image:** The VMDK/AMI/ISO disk image used to initially boot a new node before Ignition and MCD run. Boot images are updated infrequently and may lag the node image by many z-streams. The `rpms-vmdk.txt` file is extracted from a boot image.
 
 ---
 
 ## Overview
 
-We extracted the full RPM package lists from RHCOS boot images across five OCP major versions (4.12, 4.14, 4.16, 4.18, 4.19), comparing each `.0` GA release to its latest z-stream. We also compared the 4.19 container image against a raw VMDK disk image, and performed a cross-major comparison (4.16.0 to 4.18.38) to isolate the effect of the RHEL base version.
+We extracted the full RPM package lists from RHCOS node images across five OCP major versions (4.12, 4.14, 4.16, 4.18, 4.19), comparing each `.0` GA release to its latest z-stream. We also compared the 4.19 node image against a boot image (raw VMDK), and performed a cross-major comparison (4.16.0 to 4.18.38) to isolate the effect of the RHEL base version.
 
 ## Summary Table
 
@@ -31,9 +38,9 @@ Across all five major versions, **62-67% of packages remain at their GA version*
 
 Comparing 4.16.0 to 4.18.38 (both on RHEL 9.4) yields almost the same update ratio as the within-version 4.16.0 → 4.16.60 comparison (61% vs 62% unchanged, both with 205 updated packages). The only meaningful difference is 23 newly added packages in 4.18 (python3 modules, subscription-manager, OCP runtime components). This shows the **RHEL base version** is the dominant factor, not the OCP major version.
 
-### 3. Steady Image Growth
+### 3. Steady Node Image Growth
 
-The RHCOS image has grown from **503 packages (4.12) to 570 packages (4.19)**, adding roughly 67 packages over four major versions.
+The RHCOS node image has grown from **503 packages (4.12) to 570 packages (4.19)**, adding roughly 67 packages over four major versions.
 
 | Version | GA Pkgs | Latest Pkgs | Z-Streams |
 |---------|--------:|------------:|----------:|
@@ -202,7 +209,7 @@ To correct for this, we selected the z-stream release closest to each 6-month ca
 
 **Window 6 shows a late resurgence.** The final window (.78 → .87, Jul 2025 – Apr 2026) jumps back to 80 updated packages after the lull in windows 4-5. This coincides with late-lifecycle CVEs hitting packages that had been stable for over a year.
 
-**Boot image drift plateaus after 18 months.** By 4.12.60 (~17 months), 35% of packages have drifted from GA. The remaining 21 months only add 3 more percentage points (35% → 38%). The first 18 months account for 92% of all eventual drift.
+**Node image drift from GA plateaus after 18 months.** By 4.12.60 (~17 months), 35% of packages have drifted from their GA versions. The remaining 21 months only add 3 more percentage points (35% → 38%). The first 18 months account for 92% of all eventual drift.
 
 **The z-stream number midpoint (4.12.43) is actually at month 10, not the calendar midpoint.** The first 43 z-streams span only 10 months (weekly cadence), while the last 44 span 28 months (biweekly → monthly). Bisecting by z-stream number is misleading — the "second half" has nearly 3x more calendar time.
 
@@ -234,11 +241,11 @@ To correct for this, we selected the z-stream release closest to each 6-month ca
 
 ---
 
-## VMDK vs Container Image Comparison (4.19)
+## Boot Image vs Node Image Comparison (4.19)
 
-We compared the 4.19 RHCOS container image (570 packages) against a raw VMDK disk image (557 packages). **373 packages are common to both** with identical versions.
+We compared the 4.19 node image (570 packages) against the boot image (VMDK, 557 packages). **373 packages are common to both** with identical versions.
 
-Packages present in the container image but absent from the VMDK are primarily OCP-specific runtime components:
+Packages present in the node image but absent from the boot image are primarily OCP-specific runtime components that get added during MCD firstboot:
 
 - **Container/OCP runtime:** cri-o, cri-tools, openshift-clients, openshift-kubelet, conmon-rs
 - **Networking:** NetworkManager-ovs, openvswitch3.5, openvswitch-selinux-extra-policy
@@ -249,8 +256,8 @@ Packages present in the container image but absent from the VMDK are primarily O
 
 ## Methodology
 
-1. **Container images:** RPM lists extracted from RHCOS release container images using `rpm --dbpath` against the embedded rpmdb
-2. **VMDK:** RPM database extracted from a raw VMDK disk image by mounting the rpmdb.sqlite directly
+1. **Node images:** RPM lists extracted from RHCOS release container images (node images) using `rpm --dbpath` against the embedded rpmdb
+2. **Boot image (VMDK):** RPM database extracted from a raw VMDK boot image by mounting the rpmdb.sqlite directly
 3. **Comparison scripts:** Custom shell scripts in `scripts/` directory performed the diff and evolution analysis
 4. **Data files:** Raw RPM lists stored as `rpms-{version}.txt`, package name maps as `name-map-*.txt`, and the full evolution report as `rhcos-rpm-evolution-report.txt`
 
@@ -260,10 +267,10 @@ Packages present in the container image but absent from the VMDK are primarily O
 
 | File | Description |
 |------|-------------|
-| `rpms-{version}.txt` | Full RPM list for each release (15 files: GA, midpoint, and latest for each version) |
-| `rpms-vmdk.txt` | RPM list extracted from the VMDK disk image |
-| `rpms-common-all-three.txt` | Packages common to 4.19.0, 4.19.29, and the VMDK |
-| `rpms-same-containers.txt` | Packages identical between the two container image versions |
+| `rpms-{version}.txt` | Full RPM list for each release's node image (GA, midpoint, and latest for each version) |
+| `rpms-vmdk.txt` | RPM list extracted from the boot image (VMDK) |
+| `rpms-common-all-three.txt` | Packages common to 4.19.0 node image, 4.19.29 node image, and the boot image |
+| `rpms-same-containers.txt` | Packages identical between the two node image versions |
 | `name-map-*.txt` | Package name → full NEVRA mappings |
 | `pkgnames-rpms-*.txt` | Deduplicated package name lists |
 | `packages-never-updated-in-zstreams.txt` | 230 packages unchanged in all 5 z-stream lifecycles |
