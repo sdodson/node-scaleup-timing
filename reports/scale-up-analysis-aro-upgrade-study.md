@@ -619,6 +619,28 @@ The 50 ostree chunks fetched by the native boot image have **identical hashes** 
 
 This means the boot image version has **no meaningful effect on which layers need fetching or how much data is transferred**. The +15s MCD penalty seen with the native boot image is not caused by boot image drift or layer sharing — it is registry throughput variance from sequential testing.
 
+### Ostree Layer/Chunk Comparison Across Versions and Platforms
+
+The table below compares the ostree chunk layer composition at each upgrade step, plus the AWS 4.20.18 cluster used for optimization testing. All data extracted from `rpm-ostree` and `podman` journal lines during MCD firstboot.
+
+| Version | Boot Image | Chunks Present | Chunks Needed | Custom Layers | Total Fetch |
+|---------|------------|---------------:|--------------:|--------------:|------------:|
+| **ARO 4.16.30** | aro_416 (native) | **14** | **37** | 0 | **945 MB** |
+| **ARO 4.17.51** | aro_416 (stale) | **0** | **51** | 0 | **1.2 GB** |
+| **ARO 4.18.26** | aro_416 (stale) | **0** | **51** | 0 | **1.2 GB** |
+| **ARO 4.19.27** | aro_416 (stale) | **0** | **51** | 2 (187 MB) | **1.4 GB** |
+| **ARO 4.20.18** | aro_416 (stale) | **0** | **51** | 2 (193 MB) | **1.4 GB** |
+| **ARO 4.20.18 (native)** | aro_420 (refreshed) | **1** | **50** | 2 (193 MB) | **1.4 GB** |
+| **AWS 4.20.18** | RHCOS AMI (native) | **26** | **25** | 2 (193 MB) | **613 MB** |
+
+**Observations:**
+
+- **ARO layer sharing collapsed after one upgrade.** The 4.16 boot image had 14 chunks in common with the 4.16 target; after upgrading to 4.17 that dropped to 0. Further upgrades to 4.18–4.20 stayed at 0 — there was nothing left to lose.
+- **Refreshing the ARO boot image to 4.20 recovered only 1 chunk** (2.3 kB). The ARO marketplace image and the OCP machine-os image produce almost entirely different ostree chunk hashes even for the same OCP version.
+- **The AWS RHCOS AMI shares 26 of 51 chunks**, including the largest single chunk (623 MB). This drops the ostree fetch from 1.3 GB to 420 MB — a 68% reduction in ostree data transferred. The custom layers (193 MB) are never cached on either platform.
+- **4.19 introduced 2 "custom layers"** (~190 MB) that are always fetched regardless of boot image. The ostree chunk count stayed at 51 across all versions; total layer count rose from 51 to 53 in 4.19+.
+- **The largest single chunk grew over time**: 431 MB (4.16) → 461 MB (4.17–4.18) → 623 MB (4.19+). This chunk dominates fetch time and is present in the AWS boot image but absent from all ARO boot images.
+
 ### Notes
 
 - **Native boot image is 18s SLOWER than override** — but this is not a boot-image effect. Layer sharing analysis shows both boot images fetch nearly identical data (~1.5 GB, 50-51 ostree chunks with matching hashes). The +15s MCD penalty is concentrated in rpm-ostree rebase (+11s) and is attributable to registry throughput variance.
