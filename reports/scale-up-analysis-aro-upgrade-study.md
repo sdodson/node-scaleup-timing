@@ -639,7 +639,15 @@ The table below compares the ostree chunk layer composition at each upgrade step
 
 - **ARO layer sharing collapsed after one upgrade.** The 4.16 boot image had 14 chunks in common with the 4.16 target; after upgrading to 4.17 that dropped to 0. Further upgrades to 4.18–4.20 stayed at 0 — there was nothing left to lose.
 - **Refreshing the ARO boot image to 4.20 recovered only 1 chunk** (2.3 kB). The ARO marketplace image and the OCP machine-os image produce almost entirely different ostree chunk hashes even for the same OCP version.
-- **The AWS RHCOS AMI (effectively 4.20.17) shares 26 of 51 chunks at 4.20.18**, including the largest single chunk (623 MB). This drops the ostree fetch from 1.3 GB to 420 MB — a 68% reduction in ostree data transferred. Layer sharing degrades measurably per z-stream: 26/51 at 4.20.18 (1 z-stream behind) → 23/51 at 4.20.19 (−3 chunks) → 18/51 at 4.20.20 (−5 more chunks). The fetch volume grows correspondingly: 613 → 644 → 702 MB. The custom layers (193 MB) are never cached on either platform.
+- **The AWS RHCOS AMI (effectively 4.20.17) shares 26 of 51 chunks at 4.20.18**, including the largest single chunk (623 MB). This drops the ostree fetch from 1.3 GB to 420 MB — a 68% reduction in ostree data transferred. Layer sharing degrades measurably per z-stream, with the drift rate accelerating:
+
+  | z-streams behind | Target | Chunks Present | Chunks Lost | Fetch Volume |
+  |:---:|:---:|:---:|:---:|:---:|
+  | 1 | 4.20.18 | 26/51 | — | 613 MB |
+  | 2 | 4.20.19 | 23/51 | −3 | 644 MB |
+  | 3 | 4.20.20 | 18/51 | −5 | 702 MB |
+
+  At this rate the boot image advantage over ARO (which fetches all 51 chunks) erodes within ~6 z-streams. The custom layers (193 MB) are never cached on either platform.
 - **4.19 introduced 2 ["custom layers"](ostree-chunk-vs-custom-layers.md)** (~190 MB) that are always fetched regardless of boot image. The ostree chunk count stayed at 51 across all versions; total layer count rose from 51 to 53 in 4.19+.
 - **The largest single chunk grew over time**: 431 MB (4.16) → 461 MB (4.17–4.18) → 623 MB (4.19+). This chunk dominates fetch time and is present in the AWS boot image but absent from all ARO boot images.
 
