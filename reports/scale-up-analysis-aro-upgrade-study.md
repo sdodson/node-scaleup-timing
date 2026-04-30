@@ -632,12 +632,13 @@ The table below compares the ostree chunk layer composition at each upgrade step
 | **ARO 4.20.18** | aro_416 (stale) | **0** | **51** | 2 (193 MB) | **1.4 GB** |
 | **ARO 4.20.18 (native)** | aro_420 (refreshed) | **1** | **50** | 2 (193 MB) | **1.4 GB** |
 | **AWS 4.20.18** | RHCOS AMI 4.20.17 | **26** | **25** | 2 (193 MB) | **613 MB** |
+| **AWS 4.20.19** | RHCOS AMI 4.20.17 | **23** | **28** | 2 (193 MB) | **644 MB** |
 
 **Observations:**
 
 - **ARO layer sharing collapsed after one upgrade.** The 4.16 boot image had 14 chunks in common with the 4.16 target; after upgrading to 4.17 that dropped to 0. Further upgrades to 4.18–4.20 stayed at 0 — there was nothing left to lose.
 - **Refreshing the ARO boot image to 4.20 recovered only 1 chunk** (2.3 kB). The ARO marketplace image and the OCP machine-os image produce almost entirely different ostree chunk hashes even for the same OCP version.
-- **The AWS RHCOS AMI (effectively 4.20.17) shares 26 of 51 chunks**, including the largest single chunk (623 MB). This drops the ostree fetch from 1.3 GB to 420 MB — a 68% reduction in ostree data transferred. The high layer sharing reflects the AMI being only one z-stream behind the target (4.20.17 → 4.20.18). The custom layers (193 MB) are never cached on either platform.
+- **The AWS RHCOS AMI (effectively 4.20.17) shares 26 of 51 chunks at 4.20.18**, including the largest single chunk (623 MB). This drops the ostree fetch from 1.3 GB to 420 MB — a 68% reduction in ostree data transferred. At 4.20.19 (2 z-streams behind), sharing drops to 23/51 chunks (644 MB fetched) — 3 more chunks diverged with one additional z-stream of drift. The custom layers (193 MB) are never cached on either platform.
 - **4.19 introduced 2 ["custom layers"](ostree-chunk-vs-custom-layers.md)** (~190 MB) that are always fetched regardless of boot image. The ostree chunk count stayed at 51 across all versions; total layer count rose from 51 to 53 in 4.19+.
 - **The largest single chunk grew over time**: 431 MB (4.16) → 461 MB (4.17–4.18) → 623 MB (4.19+). This chunk dominates fetch time and is present in the AWS boot image but absent from all ARO boot images.
 
@@ -654,8 +655,9 @@ Splitting the rpm-ostree rebase transaction into fetch (downloading chunks) and 
 | **ARO 4.20.18 (override)** | 53 | 2 | 56s | **20.4s** | 1.9s |
 | **ARO 4.20.18 (native)** | 52 | 2 | 62s | **15.3s** | 1.6s |
 | **AWS 4.20.18** | 27 | 2 | 8s | **23.6s** | 1.1s |
+| **AWS 4.20.19** | 30 | 2 | 22s | **12.3s** | 0.6s |
 
-n=24 per ARO version (excl. outlier rounds), n=15 for AWS. Fetch mean excludes outlier rounds (4.18 r4, 4.20 r4) with transient registry slowdowns.
+n=24 per ARO version (excl. outlier rounds), n=15 for AWS 4.20.18, n=3 for AWS 4.20.19. Fetch mean excludes outlier rounds (4.18 r4, 4.20 r4) with transient registry slowdowns.
 
 **Key finding: apply time jumped +12.5s between 4.18 and 4.19** (7.7s → 20.4s), coinciding exactly with the introduction of 2 custom layers (~190 MB). From 4.16 through 4.18, apply held steady at ~7.5s regardless of whether 37 or 51 ostree chunks were fetched — the ostree chunk count simply does not affect apply cost.
 
@@ -663,8 +665,9 @@ Importantly, the apply regression did not recover in scenarios where the filesys
 
 - **ARO 4.20.18 native** (refreshed boot image, 1 chunk already present): apply was 15.3s — better than the stale-boot-image override (20.4s), but still 2× the 4.18 baseline of 7.7s. The smaller delta from a version-matched boot image helps somewhat, but the custom layer overhead remains.
 - **AWS 4.20.18** (boot image is effectively 4.20.17, so 26 chunks already present, only 613 MB fetched vs 1.4 GB on ARO): apply was actually **slower** at 23.6s despite fetching less than half the data and having only a one-z-stream filesystem delta. Fewer chunks to fetch does not mean fewer chunks to apply — the ostree repo still needs the same final state. The higher AWS apply time likely reflects EBS I/O characteristics vs ARO's Premium SSD for the write-heavy staging operation.
+- **AWS 4.20.19** (same boot image, now 2 z-streams behind, 23 chunks present, 644 MB fetched): apply dropped to **12.3s** (σ=0.6s, n=3) — nearly half the 4.20.18 result (23.6s). Fetch time increased from 8s to 22s due to 3 additional chunks needing download (28 vs 25). The dramatically lower apply time compared to 4.20.18 may reflect EBS I/O variance between test runs (the 4.20.19 test ran on the same cluster after upgrade, while 4.20.18 was a fresh install), or possible improvements in the 4.20.19 custom layer content. With only n=3, the 4.20.19 apply measurement should be treated as preliminary.
 
-This suggests that optimizing layer sharing (refreshing boot images, caching chunks) reduces **fetch time** but does not reduce **apply time**. The apply cost is driven by the custom layer processing introduced in 4.19, and by the disk I/O cost of staging the deployment — not by how many chunks were downloaded.
+This suggests that optimizing layer sharing (refreshing boot images, caching chunks) reduces **fetch time** but does not reduce **apply time**. The apply cost is driven by the custom layer processing introduced in 4.19, and by the disk I/O cost of staging the deployment — not by how many chunks were downloaded. However, the wide variance between the AWS 4.20.18 (23.6s) and 4.20.19 (12.3s) apply results — despite identical custom layer sizes — highlights that apply time is sensitive to EBS I/O conditions and may not be as deterministic as the ARO Premium SSD results suggest.
 
 ### Notes
 
