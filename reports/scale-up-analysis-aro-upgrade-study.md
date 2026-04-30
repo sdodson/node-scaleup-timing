@@ -641,6 +641,31 @@ The table below compares the ostree chunk layer composition at each upgrade step
 - **4.19 introduced 2 "custom layers"** (~190 MB) that are always fetched regardless of boot image. The ostree chunk count stayed at 51 across all versions; total layer count rose from 51 to 53 in 4.19+.
 - **The largest single chunk grew over time**: 431 MB (4.16) → 461 MB (4.17–4.18) → 623 MB (4.19+). This chunk dominates fetch time and is present in the AWS boot image but absent from all ARO boot images.
 
+### Rebase Apply Time: Fetch vs Apply Breakdown
+
+Splitting the rpm-ostree rebase transaction into fetch (downloading chunks) and apply (unpacking into the ostree repo and staging the deployment) reveals that the number of chunks fetched has no meaningful effect on apply time. Apply time is dominated by the 2 custom layers introduced in 4.19.
+
+| Version | Chunks Fetched | Custom Layers | Fetch (mean) | Apply (mean) | Apply σ |
+|---------|---------------:|--------------:|-------------:|-------------:|--------:|
+| **ARO 4.16.30** | 37 | 0 | 38s | **7.3s** | 0.5s |
+| **ARO 4.17.51** | 51 | 0 | 43s | **7.5s** | 0.7s |
+| **ARO 4.18.26** | 51 | 0 | 54s | **7.7s** | 0.6s |
+| **ARO 4.19.27** | 53 | 2 | 52s | **20.4s** | 1.6s |
+| **ARO 4.20.18 (override)** | 53 | 2 | 56s | **20.4s** | 1.9s |
+| **ARO 4.20.18 (native)** | 52 | 2 | 62s | **15.3s** | 1.6s |
+| **AWS 4.20.18** | 27 | 2 | 8s | **23.6s** | 1.1s |
+
+n=24 per ARO version (excl. outlier rounds), n=15 for AWS. Fetch mean excludes outlier rounds (4.18 r4, 4.20 r4) with transient registry slowdowns.
+
+**Key finding: apply time jumped +12.5s between 4.18 and 4.19** (7.7s → 20.4s), coinciding exactly with the introduction of 2 custom layers (~190 MB). From 4.16 through 4.18, apply held steady at ~7.5s regardless of whether 37 or 51 ostree chunks were fetched — the ostree chunk count simply does not affect apply cost.
+
+Importantly, the apply regression did not recover in scenarios where the filesystem delta or fetch volume was reduced:
+
+- **ARO 4.20.18 native** (refreshed boot image, 1 chunk already present): apply was 15.3s — better than the stale-boot-image override (20.4s), but still 2× the 4.18 baseline of 7.7s. The smaller delta from a version-matched boot image helps somewhat, but the custom layer overhead remains.
+- **AWS 4.20.18** (26 chunks already present, only 613 MB fetched vs 1.4 GB on ARO): apply was actually **slower** at 23.6s despite fetching less than half the data. Fewer chunks to fetch does not mean fewer chunks to apply — the ostree repo still needs the same final state. The higher AWS apply time likely reflects EBS I/O characteristics vs ARO's Premium SSD for the write-heavy staging operation.
+
+This suggests that optimizing layer sharing (refreshing boot images, caching chunks) reduces **fetch time** but does not reduce **apply time**. The apply cost is driven by the custom layer processing introduced in 4.19, and by the disk I/O cost of staging the deployment — not by how many chunks were downloaded.
+
 ### Notes
 
 - **Native boot image is 18s SLOWER than override** — but this is not a boot-image effect. Layer sharing analysis shows both boot images fetch nearly identical data (~1.5 GB, 50-51 ostree chunks with matching hashes). The +15s MCD penalty is concentrated in rpm-ostree rebase (+11s) and is attributable to registry throughput variance.
