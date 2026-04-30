@@ -638,12 +638,12 @@ The table below compares the ostree chunk layer composition at each upgrade step
 - **ARO layer sharing collapsed after one upgrade.** The 4.16 boot image had 14 chunks in common with the 4.16 target; after upgrading to 4.17 that dropped to 0. Further upgrades to 4.18–4.20 stayed at 0 — there was nothing left to lose.
 - **Refreshing the ARO boot image to 4.20 recovered only 1 chunk** (2.3 kB). The ARO marketplace image and the OCP machine-os image produce almost entirely different ostree chunk hashes even for the same OCP version.
 - **The AWS RHCOS AMI shares 26 of 51 chunks**, including the largest single chunk (623 MB). This drops the ostree fetch from 1.3 GB to 420 MB — a 68% reduction in ostree data transferred. The custom layers (193 MB) are never cached on either platform.
-- **4.19 introduced 2 "custom layers"** (~190 MB) that are always fetched regardless of boot image. The ostree chunk count stayed at 51 across all versions; total layer count rose from 51 to 53 in 4.19+.
+- **4.19 introduced 2 ["custom layers"](ostree-chunk-vs-custom-layers.md)** (~190 MB) that are always fetched regardless of boot image. The ostree chunk count stayed at 51 across all versions; total layer count rose from 51 to 53 in 4.19+.
 - **The largest single chunk grew over time**: 431 MB (4.16) → 461 MB (4.17–4.18) → 623 MB (4.19+). This chunk dominates fetch time and is present in the AWS boot image but absent from all ARO boot images.
 
 ### Rebase Apply Time: Fetch vs Apply Breakdown
 
-Splitting the rpm-ostree rebase transaction into fetch (downloading chunks) and apply (unpacking into the ostree repo and staging the deployment) reveals that the number of chunks fetched has no meaningful effect on apply time. Apply time is dominated by the 2 custom layers introduced in 4.19.
+Splitting the rpm-ostree rebase transaction into fetch (downloading chunks) and apply (unpacking into the ostree repo and staging the deployment) reveals that the number of chunks fetched has no meaningful effect on apply time. Apply time is dominated by the 2 [custom layers](ostree-chunk-vs-custom-layers.md) introduced in 4.19.
 
 | Version | Chunks Fetched | Custom Layers | Fetch (mean) | Apply (mean) | Apply σ |
 |---------|---------------:|--------------:|-------------:|-------------:|--------:|
