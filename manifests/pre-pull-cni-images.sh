@@ -1,9 +1,8 @@
 #!/bin/bash
 # Pre-pull NodeReady-blocking container images during firstboot.
-# Runs in parallel with MCD firstboot (rpm-ostree rebase) with
-# MAX_PARALLEL=1 to reduce network contention with MCD's OS image
-# download. Serialized pulls still overlap with MCD's I/O-bound
-# rebase work.
+# Polls journalctl every 5s for rpm-ostree "Created deployment",
+# which signals that the ostree chunk fetch and staging are done.
+# Then pulls all images in parallel before the reboot.
 #
 # Images are pulled via podman into /var/lib/containers/storage, which
 # is the same graphroot CRI-O uses. After reboot, CRI-O finds them
@@ -51,7 +50,19 @@ IMAGES=(
     "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:9db35df4013bf4bd89bd2634dcff8450e0d10e52328635a67281e7f9e3042543"
 )
 
-log "Starting pre-pull of ${#IMAGES[@]} NodeReady-blocking images (serial)"
+log "Waiting for rpm-ostree to finish deployment (polling every 5s, timeout 5m)"
+for i in $(seq 1 60); do
+    if journalctl -u rpm-ostreed.service --no-pager 2>/dev/null | grep -q "Created deployment"; then
+        log "rpm-ostree deployment created, starting pre-pull"
+        break
+    fi
+    if [ "$i" -eq 60 ]; then
+        log "Timed out waiting for rpm-ostree, starting pre-pull anyway"
+    fi
+    sleep 5
+done
+
+log "Starting pre-pull of ${#IMAGES[@]} NodeReady-blocking images (parallel)"
 
 pull_image() {
     local image="$1"
@@ -67,7 +78,8 @@ pull_image() {
 }
 
 for image in "${IMAGES[@]}"; do
-    pull_image "$image"
+    pull_image "$image" &
 done
+wait
 
 log "Pre-pull complete ($(podman images --format '{{.Repository}}' 2>/dev/null | wc -l) images cached)"
