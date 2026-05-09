@@ -279,43 +279,117 @@ Changes from Phase 3:
 - **Total time increase**: +20.3s vs baseline (+9%). The KTR savings (−41.7s) are offset by MCD slowdown (+46.5s) and reboot increase (+11.8s). The reboot increase may reflect the additional storage I/O from having 10 extra images in `/var/lib/containers/storage`.
 - **MCP rolling update may have contributed to contention**: During this test, the existing worker nodes were being updated with the new rendered config (chrony-wait MC had just been removed). This network activity could have inflated the MCD firstboot times beyond what serial pre-pull alone would cause.
 
+## Phase 6: Pre-pull with MCD Sequencing (Sleep-20 + Parallel)
+
+Re-test of pre-pull with a strategy to avoid network contention with rpm-ostree. Instead of pulling images concurrently with MCD (Phases 3–5), the script sleeps 20s after service start — allowing MCD's initial image pull and setup to proceed — then fires all 10 images in parallel. The parallel pulls complete before rpm-ostree begins its OS image fetch, eliminating contention during the rebase.
+
+Changes from Phase 5:
+- `MAX_PARALLEL` removed — all 10 images pulled concurrently via background jobs + `wait`
+- Added `sleep 20` before starting pulls (replaced serial loop)
+- chrony-wait skip MC was **not** applied (pre-pull only)
+- Single test MachineSet per round (1 zone, not 3)
+
+### Boot 1 Timeline (representative: r3)
+
+```
+19:25:53  Kernel boot
+19:26:27  Pre-pull service starts, sleeps 20s
+19:26:39  MCD detects changes, starts update
+19:26:47  Pre-pull starts pulling 10 images in parallel ─┐
+19:27:30  Pre-pull complete (43s)                        ─┘
+  ·  ·  ·  14s gap — no image pulls on the network  ·  ·  ·
+19:27:44  rpm-ostree rebase starts (network clear) ──────┐
+19:28:19  rpm-ostree Created deployment (35s)       ──────┘
+19:28:27  MCD initiates reboot
+```
+
+The critical insight: pre-pull finishes **before** rpm-ostree begins the OS image fetch, so the rebase runs at full network speed. Gap between pre-pull completion and rebase start: 2–17s across all 5 runs (mean 12s).
+
+### Summary (n=5)
+
+| Phase | Mean | Stdev | Min | Max | Δ vs Baseline |
+|---|---|---|---|---|---|
+| Boot 1 (kernel → reboot) | 158.6s | 10.1 | 147 | 174 | +38.0s (+32%) |
+| — rpm-ostree rebase | **39.4s** | 5.8 | 35 | 49 | **−0.2s (0%)** |
+| Reboot | 26.2s | 5.7 | 19 | 32 | +10.8s |
+| Boot 2 SA | 18.3s | 3.2 | 16.1 | 23.7 | −2.5s (−12%) |
+| KTR | **20.6s** | 0.9 | 19 | 21 | **−41.0sⁱᵛ** |
+| Pre-pull duration | 46.6s | 4.3 | 43 | 54 | — |
+
+ⁱᵛ Baseline KTR (61.6s) includes Boot 2 SA; Phase 5/6 KTR excludes it. Normalized post-SA comparison: baseline ~40.8s → 20.6s (−50%).
+
+### All Data Points
+
+| Sample | Boot 1 | Rebase | Reboot | SA | KTR | Pre-pull |
+|---|---|---|---|---|---|---|
+| r1 | 174 | 49 | 32 | 16.3 | 21 | 46 |
+| r2 | 147 | 40 | 24 | 18.9 | 21 | 54 |
+| r3 | 154 | 35 | 24 | 16.5 | 21 | 43 |
+| r4 | 156 | 38 | 19 | 16.1 | 21 | 44 |
+| r5 | 162 | 35 | 32 | 23.7 | 19 | 46 |
+
+### Notes
+
+- **rpm-ostree rebase at baseline speed**: Mean 39.4s vs baseline 39.6s — effectively zero contention. This is a 15s improvement over Phase 5 serial (54.3s) and 45s better than Phase 3 parallel during MCD. The sleep-20 delay ensures all pre-pull network activity finishes before the rebase's OS image fetch begins.
+- **KTR near floor with minimal variance**: Mean 20.6s (σ=0.9s), the tightest consistency of any phase. All 10 pre-pulled images are reliably cached before reboot, leaving only CSR approval + non-pre-pulled images in KTR.
+- **Boot 1 longer due to pre-pull overhead**: The 20s sleep + 47s parallel pulls add ~38s to Boot 1 vs baseline. The parallel pulls overlap with MCD's pre-rebase work (extension processing, file setup), causing some I/O contention in that phase. However, this contention does **not** affect the rpm-ostree rebase.
+- **chrony-wait active**: This phase did not include the chrony-wait skip MC. Boot 2 SA of 18.3s includes chrony-wait (~9s based on r1 systemd-blame). Combining with chrony-wait skip would reduce SA to ~13s.
+- **VM provisioning not measured**: Machine YAML was only collected for r1, and the timestamps indicate an MC rollout delay (new MachineConfig being applied to existing workers before the test node could provision). Boot 1-to-NodeReady times are reported instead.
+- **Sample size**: n=5 (single zone per round) vs n=14–15 in earlier phases. Results are consistent but the smaller sample increases uncertainty on variance estimates.
+- **Script subsequently updated**: After this test, the script was updated (commit `0d275fe`) to poll journalctl for rpm-ostree "Created deployment" instead of using a fixed sleep — a more precise mechanism for production MCO integration where the pre-pull would run after `applyOSChanges()` returns but before `reboot()` is called.
+
 ## Comparison Summary
 
-| Config | n | Total | SA | chrony | KTR | MCD FB |
-|---|---|---|---|---|---|---|
-| Baseline | 14 | **220.5s** | 20.8s | 11.7s | 61.6s | 52.0s |
-| chrony-wait skip | 15 | **215.4s** | 13.1s | 0.0s | 44.1s | 69.3s |
-| Pre-pull CNI (×3) | 7 | **233.6s** | 18.1s | 9.3s | 23.9s | 84.0s |
-| Both (×3) | 4 | **233.5s** | 12.3s | 0.0s | 20.8s | 94.0s |
-| Pre-pull serial (×1) | 15 | **240.8s** | 19.0s | 9.7s | **19.9s** | 98.5s |
+| Config | n | Total | SA | chrony | KTR | MCD FB | Rebase |
+|---|---|---|---|---|---|---|---|
+| Baseline | 14 | **220.5s** | 20.8s | 11.7s | 61.6s | 52.0s | 39.6s |
+| chrony-wait skip | 15 | **215.4s** | 13.1s | 0.0s | 44.1s | 69.3s | — |
+| Pre-pull CNI (×3) | 7 | **233.6s** | 18.1s | 9.3s | 23.9s | 84.0s | — |
+| Both (×3) | 4 | **233.5s** | 12.3s | 0.0s | 20.8s | 94.0s | — |
+| Pre-pull serial (×1) | 15 | **240.8s** | 19.0s | 9.7s | **19.9s** | 98.5s | 54.3s |
+| Pre-pull sleep-20 (∥) | 5 | ~245sⁱᵛ | 18.3s | ~9s | **20.6s** | — | **39.4s** |
+
+ⁱᵛ Estimated total (VM provisioning not directly measured for this phase; assumes ~23s matching baseline).
 
 ### KTR Comparison
 
 ```
-Baseline         ████████████████████████████████████████████████████████████████ 61.6s  σ=5.4
-chrony-wait skip ████████████████████████████████████████████ 44.1s  σ=5.3
-Pre-pull ×3      ████████████████████████ 23.9s  σ=10.1
-Both ×3          ████████████████████ 20.8s  σ=1.3
-Pre-pull ×1      ████████████████████ 19.9s  σ=1.5
+Baseline          ████████████████████████████████████████████████████████████████ 61.6s  σ=5.4
+chrony-wait skip  ████████████████████████████████████████████ 44.1s  σ=5.3
+Pre-pull ×3       ████████████████████████ 23.9s  σ=10.1
+Both ×3           ████████████████████ 20.8s  σ=1.3
+Pre-pull ×1       ████████████████████ 19.9s  σ=1.5
+Pre-pull sleep-20 ████████████████████ 20.6s  σ=0.9
+```
+
+### rpm-ostree Rebase Comparison
+
+```
+Baseline          ████████████████████████████████████████ 39.6s  σ=2.5
+Pre-pull ×1       ██████████████████████████████████████████████████████ 54.3s  σ=8.0  (+37%)
+Pre-pull sleep-20 ███████████████████████████████████████ 39.4s  σ=5.8  (0%)
 ```
 
 ### Key Findings
 
 1. **chrony-wait skip is a clean win**: −11.7s with no side effects. The `ConditionPathExists=!/var/lib/chrony/drift` drop-in is simple, reliable, and zero-cost. **Recommended for production.**
 
-2. **Pre-pull CNI reduces KTR by 68%** (61.6s → 19.9s) with serial pulls, but increases MCD firstboot by 89% due to network contention during Boot 1. Net total time is +20s (9%) worse than baseline.
+2. **Pre-pull CNI reduces KTR by 67%** (61.6s → 20.6s) with the sleep-20 approach, while keeping rpm-ostree rebase at baseline speed (39.4s vs 39.6s). Earlier approaches (Phases 3–5) achieved similar KTR reduction but slowed the rebase by 37–62% due to network contention.
 
-3. **Serial vs parallel pre-pull**:
-   - Serial (×1): KTR 19.9s (σ=1.5), MCD 98.5s, Total 240.8s
-   - Parallel (×3): KTR 23.9s (σ=10.1), MCD 84.0s, Total 233.6s
-   - Serial yields lower and more consistent KTR (all images guaranteed cached) but higher total due to longer pull duration and more overlap with MCD network operations.
+3. **MCD sequencing eliminates rebase contention**: By delaying pre-pull 20s (letting MCD start its work), the parallel image pulls complete before rpm-ostree begins its OS image fetch. The rebase runs at full network speed — the first pre-pull approach to achieve this without MCO source changes.
 
-4. **Network contention is unavoidable with a systemd unit approach**: Whether serial or parallel, the pre-pull service competes with MCD for network bandwidth during Boot 1. The contention shifts from MCD's rebase phase (with parallel pulls) to MCD's pre-rebase phase (with serial pulls), but doesn't disappear. **The only way to eliminate contention is MCO integration** — pulling images after `applyOSChanges()` returns and before `reboot()` is called (see MCO integration notes).
+4. **Serial vs parallel vs sleep-20 pre-pull**:
+   - Serial (×1): KTR 19.9s (σ=1.5), Rebase 54.3s (+37%), Total 240.8s
+   - Parallel (×3): KTR 23.9s (σ=10.1), Rebase contended, Total 233.6s
+   - Sleep-20 (∥): KTR 20.6s (σ=0.9), Rebase **39.4s (0%)**, Total ~245s
+   - Sleep-20 has the best KTR consistency and the only baseline-matching rebase time. Total is slightly higher because Boot 1 is longer (pre-pull adds ~38s), but the rebase improvement means the net cost is modest.
 
-5. **Recommended production approach**:
+5. **Pre-pull still adds to Boot 1 total**: Even with sequencing, the parallel pre-pull overlaps with MCD's pre-rebase work (extension processing, file setup), adding ~38s to Boot 1. The pre-pull itself takes ~47s. **MCO integration** — pulling images after `applyOSChanges()` returns and before `reboot()` — would move this work into otherwise-idle time between rebase completion and reboot, eliminating the Boot 1 overhead entirely.
+
+6. **Recommended production approach**:
    - **Short-term**: chrony-wait skip only (−11.7s, zero risk)
-   - **Medium-term**: Pre-pull with serial pulls + chrony-wait skip. Total is ~20s worse than baseline, but KTR is 68% lower and highly consistent — valuable for workload scheduling predictability.
-   - **Long-term**: Integrate pre-pull into MCO source code, pulling images after rpm-ostree rebase completes but before MCD triggers reboot. This eliminates network contention entirely and should yield both lower KTR and lower total.
+   - **Medium-term**: Pre-pull with sleep-20 sequencing + chrony-wait skip. Total is ~25s worse than baseline, but KTR is 67% lower (σ=0.9s) and rpm-ostree rebase runs uncontended — valuable for workload scheduling predictability.
+   - **Long-term**: Integrate pre-pull into MCO source code, pulling images after rpm-ostree rebase completes but before MCD triggers reboot. This eliminates both network contention and Boot 1 overhead, and should yield lower total time than baseline.
 
 ## Test Timeline
 
@@ -326,3 +400,4 @@ Pre-pull ×1      ████████████████████ 1
 | Pre-pull CNI (×3) | 2026-04-27–28 | 22:28–00:43 | Complete (7 usable samples) |
 | Both (×3) | 2026-04-28 | 01:05–03:37 | Complete (5 samples) |
 | Pre-pull serial (×1) | 2026-04-28 | 14:10–17:13 | Complete (15 samples) |
+| Pre-pull sleep-20 (∥) | 2026-04-28 | 19:03–19:40 | Complete (5 samples) |
