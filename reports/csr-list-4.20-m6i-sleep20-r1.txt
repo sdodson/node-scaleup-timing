@@ -1,0 +1,17 @@
+NAME        AGE     SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
+csr-2jcrv   103m    kubernetes.io/kube-apiserver-client           system:node:ip-10-0-91-188.us-east-2.compute.internal                       24h                 Approved,Issued
+csr-6r6ld   103m    kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
+csr-bhblh   103m    kubernetes.io/kube-apiserver-client           system:node:ip-10-0-25-95.us-east-2.compute.internal                        24h                 Approved,Issued
+csr-chvw9   6m8s    kubernetes.io/kube-apiserver-client           system:node:ip-10-0-29-15.us-east-2.compute.internal                        24h                 Approved,Issued
+csr-chwr8   103m    kubernetes.io/kubelet-serving                 system:node:ip-10-0-25-95.us-east-2.compute.internal                        <none>              Approved,Issued
+csr-cknsn   103m    kubernetes.io/kubelet-serving                 system:node:ip-10-0-91-188.us-east-2.compute.internal                       <none>              Approved,Issued
+csr-dgtzh   103m    kubernetes.io/kube-apiserver-client           system:node:ip-10-0-33-161.us-east-2.compute.internal                       24h                 Approved,Issued
+csr-g8rsn   103m    kubernetes.io/kube-apiserver-client           system:node:ip-10-0-33-161.us-east-2.compute.internal                       24h                 Approved,Issued
+csr-gq9pt   103m    kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
+csr-lgnhv   6m4s    kubernetes.io/kube-apiserver-client           system:node:ip-10-0-29-15.us-east-2.compute.internal                        24h                 Approved,Issued
+csr-n46sj   103m    kubernetes.io/kube-apiserver-client           system:node:ip-10-0-91-188.us-east-2.compute.internal                       24h                 Approved,Issued
+csr-n9lsx   103m    kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
+csr-p7484   6m25s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
+csr-vlxkv   6m23s   kubernetes.io/kubelet-serving                 system:node:ip-10-0-29-15.us-east-2.compute.internal                        <none>              Approved,Issued
+csr-wqs8b   103m    kubernetes.io/kubelet-serving                 system:node:ip-10-0-33-161.us-east-2.compute.internal                       <none>              Approved,Issued
+csr-xbhp4   103m    kubernetes.io/kube-apiserver-client           system:node:ip-10-0-25-95.us-east-2.compute.internal                        24h                 Approved,Issued
