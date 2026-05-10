@@ -4,11 +4,11 @@
 
 This study measured how RHCOS boot image age affects OpenShift node scale-up time using 165 samples across 11 boot image versions (4.10.20 through 4.18.40) on an OCP 4.18.24 cluster.
 
-**Key finding: Boot image age doesn't matter — until it crosses the RHEL 8/9 boundary.**
+**Key finding: Boot image age doesn't matter — until it's old enough to require a 3-boot sequence.**
 
-Within RHEL 9 (4.13–4.18), scale-up time is flat at **~210s** regardless of boot image age. The oldest RHEL 9 image (4.13.51, 5 minor versions back) performs within noise of the native boot image. A boot image *newer* than the cluster (4.18.40) also works transparently. Ostree chunk sharing drops to zero within 2 minor versions, adding ~800 MB of fetch — but this costs only ~10-15s and is absorbed by variance in other phases.
+Across RHEL 9 (4.13–4.18) and even RHEL 8 4.12, scale-up time is flat at **~210s** regardless of boot image age. The oldest RHEL 9 image (4.13.51, 5 minor versions back) and the RHEL 8 image (4.12.40) both perform within noise of the native boot image. A boot image *newer* than the cluster (4.18.40) also works transparently. Ostree chunk sharing drops to zero within 2 minor versions, adding ~800 MB of fetch — but this costs only ~10-15s and is absorbed by variance in other phases.
 
-RHEL 8 boot images (4.11 and 4.10) trigger a **3-boot sequence** that adds 80–110s (+35-50%), jumping scale-up time to 308–334s. This is the only meaningful penalty.
+The oldest RHEL 8 boot images (4.11 and 4.10) trigger a **3-boot sequence** — an intermediate rebase through a RHEL 9 pivot before reaching the target — that adds 80–110s (+35-50%), jumping scale-up time to 308–334s. Notably, 4.12 (also RHEL 8) does *not* require this intermediate pivot and completes in a normal 2-boot sequence. The 3-boot path appears to be specific to sufficiently old RHEL 8 images rather than all RHEL 8 images.
 
 ```
 Total Scale-Up Time by Boot Image Version (mean, n=15 each)
@@ -21,10 +21,10 @@ Total Scale-Up Time by Boot Image Version (mean, n=15 each)
     4.15.51 |█████████████████████░ 214s
     4.14.38 |█████████████████████░ 219s
     4.13.51 |██████████████████████░224s
-    4.12.40 |██████████████████████░227s     RHEL 9 / RHEL 8 boundary
+    4.12.40 |██████████████████████░227s     (RHEL 8, but 2-boot)
     --------|-------------------------------------- 3-boot penalty ------
-    4.11.35 |██████████████████████████████░  308s  ← 3 boots (RHEL 8)
-    4.10.20 |█████████████████████████████████░334s ← 3 boots (RHEL 8)
+    4.11.35 |██████████████████████████████░  308s  ← 3 boots (older RHEL 8)
+    4.10.20 |█████████████████████████████████░334s ← 3 boots (older RHEL 8)
             0       100       200       300       400
                               seconds
 
@@ -44,7 +44,7 @@ Ostree Chunk Sharing (51 total chunks)
              █ = cached on boot image    ░ = fetched during rebase
 ```
 
-**Practical takeaway**: There is no urgency to refresh boot images within the same RHEL major version. The only hard requirement is avoiding RHEL 8 boot images on RHEL 9 clusters, which triggers the costly 3-boot path.
+**Practical takeaway**: There is no urgency to refresh boot images frequently. Even RHEL 8 boot images work fine through 4.12. Only the oldest RHEL 8 images (4.11 and earlier) trigger the costly 3-boot path.
 
 ## Purpose
 
@@ -641,11 +641,11 @@ Same 3-boot path as 4.11.35, but each phase takes longer:
 
 The study reveals three distinct regimes, plus a forward-drift data point:
 
-1. **RHEL 9 boot images (4.13–4.18, including 4.18.40 newer)**: Total scale-up time is essentially flat at **202–227s** regardless of boot image age or direction. A boot image 16 z-streams newer (4.18.40, 209s), the native image (4.18.24, 213s), and the oldest RHEL 9 image (4.13.51, 224s) are all within noise.
+1. **2-boot images (4.12–4.18, including 4.18.40 newer)**: Total scale-up time is essentially flat at **202–227s** regardless of boot image age, RHEL version, or direction. This range includes both RHEL 9 (4.13–4.18) and RHEL 8 (4.12.40) boot images — all complete with a normal 2-boot sequence.
 
-2. **RHEL 8 → RHEL 9 boundary (4.11–4.12)**: A step-function increase appears. 4.12.40 (227s, still 2-boot) is the last version with normal timing. 4.11.35 jumps to **308s** due to the 3-boot sequence.
+2. **3-boot images (4.11 and 4.10)**: A step-function increase appears. 4.11.35 jumps to **308s** and 4.10.20 to **334s** due to a 3-boot sequence requiring an intermediate RHEL 9 pivot. These are also RHEL 8 boot images, but unlike 4.12 they cannot rebase directly to the RHEL 9 target. The specific RHEL 8 version threshold that triggers the 3-boot path was not investigated further.
 
-3. **Oldest RHEL 8 (4.10.20)**: **334s** — the 3-boot path takes even longer as the gap to the target image grows. Boot -1 (intermediate rebase) increases from 61s (4.11) to 83s (4.10).
+3. **Older = slower within 3-boot**: Boot -1 (intermediate rebase) increases from 61s (4.11) to 83s (4.10), suggesting a larger delta to the intermediate image adds cost.
 
 ### Ostree Chunk Sharing
 
@@ -659,13 +659,13 @@ The study reveals three distinct regimes, plus a forward-drift data point:
 
 ### The 3-Boot Penalty
 
-The 4.11 and 4.10 boot images (RHEL 8) require two rebases instead of one:
+The 4.11 and 4.10 boot images (older RHEL 8) require two rebases instead of one, with an intermediate RHEL 9 pivot. The 4.12 boot image (also RHEL 8) does **not** require this intermediate step — it rebases directly to the target in a normal 2-boot sequence.
 
-| Version | Boots | Rebase Path | Extra Time |
-|---|---|---|---|
-| 4.12.40+ | 2 | Direct RHEL 8/9 → 4.18.24 target | 0s (baseline) |
-| 4.11.35 | 3 | RHEL 8 → RHEL 9 intermediate → 4.18.24 target | +81s |
-| 4.10.20 | 3 | RHEL 8 → RHEL 9 intermediate → 4.18.24 target | +107s |
+| Version | RHEL | Boots | Rebase Path | Extra Time |
+|---|---|---|---|---|
+| 4.12.40 | 8 | 2 | Direct RHEL 8 → 4.18.24 target | 0s (baseline) |
+| 4.11.35 | 8 | 3 | RHEL 8 → RHEL 9 intermediate → 4.18.24 target | +81s |
+| 4.10.20 | 8 | 3 | RHEL 8 → RHEL 9 intermediate → 4.18.24 target | +107s |
 
 The extra boot cycle costs ~80-110s: an additional rebase (~60-83s), an additional reboot (~15s), and additional ignition/systemd time.
 
@@ -675,7 +675,7 @@ The same 18 images (or 20 for baseline/4.10) totaling 10.2–12.1 GB are pulled 
 
 ### Practical Implications
 
-1. **Keep boot images within the same RHEL major version** as the cluster. Crossing the RHEL 8/9 boundary adds ~80-110s (35-50% increase).
-2. **Within RHEL 9**, boot image age has negligible impact on scale-up time. A 4.13 boot image on a 4.18 cluster is within noise of a native 4.18 boot image.
+1. **Avoid the oldest RHEL 8 boot images** (4.11 and earlier) on RHEL 9 clusters — they trigger a 3-boot sequence adding ~80-110s (35-50% increase). RHEL 8 4.12 works fine with a normal 2-boot path.
+2. **Boot image age has negligible impact on scale-up time** across a wide range. A 4.12 (RHEL 8) boot image on a 4.18 cluster is within noise of the native 4.18 boot image.
 3. **Ostree chunk sharing plateaus quickly**: After 2 minor versions, all chunks are fetched regardless. The ~800 MB of extra fetch (437 MB → 1.2 GB) takes only ~10-15s additional rebase time.
 4. **The dominant bottleneck is container image pulls (~60s)**, not ostree rebase (~30-50s). Pre-pulling NodeReady images would benefit all versions equally.
