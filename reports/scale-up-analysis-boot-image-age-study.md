@@ -1,5 +1,51 @@
 # Node Scale-Up Timing: Boot Image Age Study
 
+## Executive Summary
+
+This study measured how RHCOS boot image age affects OpenShift node scale-up time using 165 samples across 11 boot image versions (4.10.20 through 4.18.40) on an OCP 4.18.24 cluster.
+
+**Key finding: Boot image age doesn't matter — until it crosses the RHEL 8/9 boundary.**
+
+Within RHEL 9 (4.13–4.18), scale-up time is flat at **~210s** regardless of boot image age. The oldest RHEL 9 image (4.13.51, 5 minor versions back) performs within noise of the native boot image. A boot image *newer* than the cluster (4.18.40) also works transparently. Ostree chunk sharing drops to zero within 2 minor versions, adding ~800 MB of fetch — but this costs only ~10-15s and is absorbed by variance in other phases.
+
+RHEL 8 boot images (4.11 and 4.10) trigger a **3-boot sequence** that adds 80–110s (+35-50%), jumping scale-up time to 308–334s. This is the only meaningful penalty.
+
+```
+Total Scale-Up Time by Boot Image Version (mean, n=15 each)
+
+    4.18.40 |████████████████████░  209s  (newer than cluster)
+    4.18.24 |█████████████████████░ 213s  ← baseline (native)
+     4.18.0 |█████████████████████░ 211s
+    4.17.35 |████████████████████░  208s
+    4.16.41 |████████████████████░  202s
+    4.15.51 |█████████████████████░ 214s
+    4.14.38 |█████████████████████░ 219s
+    4.13.51 |██████████████████████░224s
+    4.12.40 |██████████████████████░227s     RHEL 9 / RHEL 8 boundary
+    --------|-------------------------------------- 3-boot penalty ------
+    4.11.35 |██████████████████████████████░  308s  ← 3 boots (RHEL 8)
+    4.10.20 |█████████████████████████████████░334s ← 3 boots (RHEL 8)
+            0       100       200       300       400
+                              seconds
+
+Ostree Chunk Sharing (51 total chunks)
+
+    4.18.40 |████████████████░░░░░░░░░░░░░░░░░░░  16 present / 35 needed (596 MB)
+    4.18.24 |███████████████████████████░░░░░░░░░  27 present / 24 needed (437 MB)
+     4.18.0 |███████░░░░░░░░░░░░░░░░░░░░░░░░░░░░   7 present / 44 needed (1.2 GB)
+    4.17.35 |███████░░░░░░░░░░░░░░░░░░░░░░░░░░░░   7 present / 44 needed (1.2 GB)
+    4.16.41 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.15.51 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.14.38 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.13.51 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.12.40 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.11.35 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.10.20 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+             █ = cached on boot image    ░ = fetched during rebase
+```
+
+**Practical takeaway**: There is no urgency to refresh boot images within the same RHEL major version. The only hard requirement is avoiding RHEL 8 boot images on RHEL 9 clusters, which triggers the costly 3-boot path.
+
 ## Purpose
 
 Measure how boot image age affects node scale-up time on an OCP 4.18.24 cluster. The cluster version stays constant; the RHCOS AMI used to provision worker nodes varies from the native 4.18.24 boot image down to 4.10.20 — spanning 8 minor versions and the RHEL 8/9 boundary. For each boot image, the study records total scale-up time, per-phase timings, ostree chunk/layer fetch volume, and the container images needed for NodeReady.
@@ -62,35 +108,6 @@ Measure how boot image age affects node scale-up time on an OCP 4.18.24 cluster.
 | **4.12.40** | 0 | 51 | 0 | 1.2 GB |
 | **4.11.35** | 0 | 51 | 0 | 1.2 GB |
 | **4.10.20** | 0 | 51 | 0 | 1.2 GB |
-
-## NodeReady Container Images
-
-The same set of container images is pulled during the final boot across all boot image versions. Images are pulled in parallel by CRI-O (~3x concurrency). The baseline (4.18.24) and oldest (4.10.20) boot images pull 20 images (12.1 GB); all other versions pull 18 images (10.8–11.1 GB), missing `cluster-network-operator` and `network-metrics-daemon`.
-
-| Component | Size | Digest (short) |
-|---|---|---|
-| ovn-kubernetes | 1500 MB | 1dcf10f115b3 |
-| multus-cni | 1181 MB | 6a2e85b7d241 |
-| multus-whereabouts-ipam-cni | 836 MB | b050afee734d |
-| tools | 832 MB | 4f69eba2cbdc |
-| container-networking-plugins | 660 MB | f0ca48f5b7fe |
-| cluster-node-tuning-operator | 658 MB | 762e52733ee7 |
-| cluster-network-operator | 593 MB | 21e2e1497d97 |
-| cli | 556 MB | 9565856231dc |
-| egress-router-cni | 514 MB | a5651deff757 |
-| cluster-ingress-operator | 488 MB | d71ffe3d7d72 |
-| aws-ebs-csi-driver | 485 MB | bd577cf6f201 |
-| docker-registry | 468 MB | 055d0c9b8e69 |
-| coredns | 462 MB | b84effe3edad |
-| kube-rbac-proxy | 444 MB | 0470599a9a0c |
-| network-metrics-daemon | 429 MB | 067ae56b0955 |
-| csi-livenessprobe | 405 MB | beb0eceb6c4e |
-| csi-node-driver-registrar | 404 MB | 551607ee7db3 |
-| prometheus-node-exporter | 399 MB | 9e0ec48ffd9e |
-| network-interface-bond-cni | 393 MB | d7fb17d8908d |
-| multus-route-override-cni | 389 MB | 702522f272dc |
-
-All images are from `quay.io/openshift-release-dev/ocp-v4.0-art-dev` and are pulled by digest. The top two images (ovn-kubernetes + multus-cni) account for 2.7 GB and dominate pull time at ~20s each. Typical wall-clock KTR image-pull time is ~60s across all versions.
 
 ## OCP 4.18.40 — Newer Than Cluster (Forward Drift)
 
