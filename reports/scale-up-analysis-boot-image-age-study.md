@@ -2,19 +2,20 @@
 
 ## Executive Summary
 
-This study measured how RHCOS boot image age affects OpenShift node scale-up time using 165 samples across 11 boot image versions (4.10.20 through 4.18.40) on an OCP 4.18.24 cluster.
+This study measured how RHCOS boot image age affects OpenShift node scale-up time using 180 samples across 12 boot image versions (4.10.20 through 4.18.40, plus an exact-match 4.18.27 boot image on a 4.18.26 cluster).
 
 **Key finding: Boot image age doesn't matter — until it's old enough to require a 3-boot sequence.**
 
-Across RHEL 9 (4.13–4.18) and even RHEL 8 4.12, scale-up time is flat at **~210s** regardless of boot image age. The oldest RHEL 9 image (4.13.51, 5 minor versions back) and the RHEL 8 image (4.12.40) both perform within noise of the native boot image. A boot image *newer* than the cluster (4.18.40) also works transparently. Ostree chunk sharing drops to zero within 2 minor versions, adding ~800 MB of fetch — but this costs only ~10-15s and is absorbed by variance in other phases.
+Across RHEL 9 (4.13–4.18) and even RHEL 8 4.12, scale-up time is flat at **~197–227s** regardless of boot image age. The exact-match boot image (4.18.27 on 4.18.26, with 51/51 chunks cached) comes in at **~197s** — only ~16s faster than the native 4.18.24 boot image — demonstrating that ostree chunk fetch volume has minimal impact on total time even when eliminating it entirely. A boot image *newer* than the cluster (4.18.40) also works transparently. Ostree chunk sharing drops to zero within 2 minor versions, adding ~800 MB of fetch — but this costs only ~10-15s and is absorbed by variance in other phases.
 
 The oldest RHEL 8 boot images (4.11 and 4.10) trigger a **3-boot sequence** — an intermediate rebase through a RHEL 9 pivot before reaching the target — that adds 80–110s (+35-50%), jumping scale-up time to 308–334s. Notably, 4.12 (also RHEL 8) does *not* require this intermediate pivot and completes in a normal 2-boot sequence. The 3-boot path appears to be specific to sufficiently old RHEL 8 images rather than all RHEL 8 images.
 
 ```
-Total Scale-Up Time by Boot Image Version (mean, n=15 each)
+Total Scale-Up Time by Boot Image Version (mean, steady-state samples)
 
-    4.18.40 |████████████████████░  209s  (newer than cluster)
-    4.18.24 |█████████████████████░ 213s  ← baseline (native)
+    4.18.27 |███████████████████░   197s  ← exact match (cluster 4.18.26, n=12)
+    4.18.40 |████████████████████░  209s  (newer than cluster, n=15)
+    4.18.24 |█████████████████████░ 213s  ← native baseline (n=15)
      4.18.0 |█████████████████████░ 211s
     4.17.35 |████████████████████░  208s
     4.16.41 |████████████████████░  202s
@@ -30,57 +31,61 @@ Total Scale-Up Time by Boot Image Version (mean, n=15 each)
 
 Ostree Chunk Sharing (51 total chunks)
 
-    4.18.40 |████████████████░░░░░░░░░░░░░░░░░░░  16 present / 35 needed (596 MB)
-    4.18.24 |███████████████████████████░░░░░░░░░  27 present / 24 needed (437 MB)
-     4.18.0 |███████░░░░░░░░░░░░░░░░░░░░░░░░░░░░   7 present / 44 needed (1.2 GB)
-    4.17.35 |███████░░░░░░░░░░░░░░░░░░░░░░░░░░░░   7 present / 44 needed (1.2 GB)
-    4.16.41 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
-    4.15.51 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
-    4.14.38 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
-    4.13.51 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
-    4.12.40 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
-    4.11.35 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
-    4.10.20 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.18.27 |███████████████████████████████████████  51 present /  0 needed (0 MB) ← exact match
+    4.18.40 |████████████████░░░░░░░░░░░░░░░░░░░░░░  16 present / 35 needed (596 MB)
+    4.18.24 |███████████████████████████░░░░░░░░░░░  27 present / 24 needed (437 MB)
+     4.18.0 |███████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   7 present / 44 needed (1.2 GB)
+    4.17.35 |███████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   7 present / 44 needed (1.2 GB)
+    4.16.41 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.15.51 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.14.38 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.13.51 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.12.40 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.11.35 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
+    4.10.20 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
              █ = cached on boot image    ░ = fetched during rebase
 ```
 
-**Practical takeaway**: There is no urgency to refresh boot images frequently. Even RHEL 8 boot images work fine through 4.12. Only the oldest RHEL 8 images (4.11 and earlier) trigger the costly 3-boot path.
+**Practical takeaway**: There is no urgency to refresh boot images frequently. Even eliminating the ostree fetch entirely (exact-match boot image) only saves ~16s vs the native boot image, because the container image pull phase (~69s) dominates. Only the oldest RHEL 8 images (4.11 and earlier) trigger the costly 3-boot path.
 
 ## Purpose
 
-Measure how boot image age affects node scale-up time on an OCP 4.18.24 cluster. The cluster version stays constant; the RHCOS AMI used to provision worker nodes varies from the native 4.18.24 boot image down to 4.10.20 — spanning 8 minor versions and the RHEL 8/9 boundary. For each boot image, the study records total scale-up time, per-phase timings, ostree chunk/layer fetch volume, and the container images needed for NodeReady.
+Measure how boot image age affects node scale-up time on an OCP cluster. The cluster version stays constant across each test series; the RHCOS AMI used to provision worker nodes varies. The primary series uses an OCP 4.18.24 cluster with boot images from 4.18.24 down to 4.10.20 — spanning 8 minor versions and the RHEL 8/9 boundary. A follow-on test uses an OCP 4.18.26 cluster with the 4.18.27 boot image to measure the exact-match baseline.
 
 ## Test Setup
 
 - **Cloud**: AWS
 - **Region**: us-east-2
 - **Instance type**: m6i.xlarge (4 vCPU, 16 GB RAM)
-- **Cluster version**: 4.18.24 (constant throughout)
+- **Primary cluster version**: 4.18.24 (boot images 4.18.40 through 4.10.20)
+- **Follow-on cluster version**: 4.18.26 (boot image 4.18.27 exact-match test)
 - **Availability zones**: us-east-2a, us-east-2b, us-east-2c
 - **Rounds per boot image**: 5 (3 zones per round)
-- **Samples per boot image**: 15 (5 rounds × 3 zones)
+- **Samples per boot image**: 15 (5 rounds × 3 zones); 12 for 4.18.27 (round 1 excluded — post-upgrade cold caches)
 - **Date started**: 2026-05-09
 
 ## Boot Image Versions
 
-| Boot Image | AMI | RHEL Base | Status |
-|---|---|---|---|
-| 4.18.40 (newer) | ami-0b9fcc2f8bed8771e | RHEL 9 | **Complete** |
-| 4.18.24 (native) | ami-0adb8862ffe5cc2ab | RHEL 9 | **Complete** |
-| 4.18.0 | ami-078e26f293629fe91 | RHEL 9 | **Complete** |
-| 4.17.35 | ami-022fbb77a3226215f | RHEL 9 | **Complete** |
-| 4.16.41 | ami-09ab4b62c2f0a4555 | RHEL 9 | **Complete** |
-| 4.15.51 | ami-0d6c4efce8daf7d2d | RHEL 9 | **Complete** |
-| 4.14.38 | ami-0dd810c1f47c5c233 | RHEL 9 | **Complete** |
-| 4.13.51 | ami-031d6e5e3d4f2f192 | RHEL 9 | **Complete** |
-| 4.12.40 | ami-00a8ad62bbaede57f | RHEL 8 | **Complete** |
-| 4.11.35 | ami-0f2483edc1ec85f51 | RHEL 8 | **Complete** |
-| 4.10.20 | ami-08750efc5bc9eb5ff | RHEL 8 | **Complete** |
+| Boot Image | AMI | RHEL Base | Cluster | Status |
+|---|---|---|---|---|
+| 4.18.27 (exact match) | ami-04756c1a4f51bb2c9 | RHEL 9 | 4.18.26 | **Complete** |
+| 4.18.40 (newer) | ami-0b9fcc2f8bed8771e | RHEL 9 | 4.18.24 | **Complete** |
+| 4.18.24 (native) | ami-0adb8862ffe5cc2ab | RHEL 9 | 4.18.24 | **Complete** |
+| 4.18.0 | ami-078e26f293629fe91 | RHEL 9 | 4.18.24 | **Complete** |
+| 4.17.35 | ami-022fbb77a3226215f | RHEL 9 | 4.18.24 | **Complete** |
+| 4.16.41 | ami-09ab4b62c2f0a4555 | RHEL 9 | 4.18.24 | **Complete** |
+| 4.15.51 | ami-0d6c4efce8daf7d2d | RHEL 9 | 4.18.24 | **Complete** |
+| 4.14.38 | ami-0dd810c1f47c5c233 | RHEL 9 | 4.18.24 | **Complete** |
+| 4.13.51 | ami-031d6e5e3d4f2f192 | RHEL 9 | 4.18.24 | **Complete** |
+| 4.12.40 | ami-00a8ad62bbaede57f | RHEL 8 | 4.18.24 | **Complete** |
+| 4.11.35 | ami-0f2483edc1ec85f51 | RHEL 8 | 4.18.24 | **Complete** |
+| 4.10.20 | ami-08750efc5bc9eb5ff | RHEL 8 | 4.18.24 | **Complete** |
 
 ## Summary
 
 | Boot Image | n | Total (mean) | Stdev | Boot 1 | Rebase | Reboot | SA | chrony | KTR | Chunks (P/N) | Fetch |
 |---|---|---|---|---|---|---|---|---|---|---|---|
+| **4.18.27** (exact match) | 12† | **197s** | 17s | 91s | 13s | 11s | 26s | 10s | 69s | 51/0 | 0 MB |
 | **4.18.40** | 15 | **209s** | 12s | 104s | 25s | 14s | 25s | 14s | 71s | 16/35 | 596 MB |
 | **4.18.24** | 15 | **213s** | 21s | 111s | 22s | 14s | 20s | 11s | 62s | 27/24 | 437 MB |
 | **4.18.0** | 15 | **211s** | 22s | 112s | 37s | 15s | 20s | 12s | 62s | 7/44 | 1.2 GB |
@@ -93,10 +98,13 @@ Measure how boot image age affects node scale-up time on an OCP 4.18.24 cluster.
 | **4.11.35** | 15 | **308s** | 19s | — | — | — | 22s | 13s | 68s | 0/51 | 1.2 GB |
 | **4.10.20** | 15 | **334s** | 18s | — | — | — | 21s | 12s | 59s | 0/51 | 1.2 GB |
 
+† Round 1 excluded from 4.18.27 stats: run immediately after cluster upgrade to 4.18.26, newly-promoted container images not yet warm in registry (KTR ~175s vs steady-state ~69s).
+
 ## Ostree Chunk/Layer Summary
 
 | Boot Image | Chunks Present | Chunks Needed | Custom Layers | Total Fetch |
 |---|---|---|---|---|
+| **4.18.27** (exact match) | 51 | 0 | 0 | 0 MB |
 | **4.18.40** | 16 | 35 | 0 | 596 MB |
 | **4.18.24** | 27 | 24 | 0 | 437 MB |
 | **4.18.0** | 7 | 44 | 0 | 1.2 GB |
@@ -108,6 +116,57 @@ Measure how boot image age affects node scale-up time on an OCP 4.18.24 cluster.
 | **4.12.40** | 0 | 51 | 0 | 1.2 GB |
 | **4.11.35** | 0 | 51 | 0 | 1.2 GB |
 | **4.10.20** | 0 | 51 | 0 | 1.2 GB |
+
+## OCP 4.18.27 — Exact Match Boot Image (Cluster 4.18.26)
+
+This test used the 4.18.27 RHCOS AMI (`ami-04756c1a4f51bb2c9`) on a freshly upgraded OCP 4.18.26 cluster. The 4.18.27 boot image is the first refresh after the cluster version, meaning the ostree chunk content is essentially identical to the running node image — producing a perfect 51/51 cache hit and zero-byte fetch.
+
+### All Data Points
+
+| Round | Zone | Total | VM Prov | Boot 1 | Rebase | Reboot | SA | chrony | KTR |
+|---|---|---|---|---|---|---|---|---|---|
+| 1† | 1 | 300s | 24s | 89s | 10s | 11s | 34.7s | 20.2s | 176s |
+| 1† | 2 | 298s | 17s | 99s | 17s | 10s | 30.2s | 7.0s | 172s |
+| 1† | 3 | 298s | 24s | 88s | 13s | 11s | 32.5s | 9.1s | 175s |
+| 2 | 1 | 226s | 32s | 113s | 16s | 12s | 34.0s | 16.2s | 69s |
+| 2 | 2 | 225s | 31s | 114s | 16s | 11s | 33.2s | 15.1s | 69s |
+| 2 | 3 | 224s | 30s | 112s | 14s | 11s | 32.9s | 14.2s | 71s |
+| 3 | 1 | 192s | 24s | 82s | 14s | 12s | 25.8s | 9.0s | 74s |
+| 3 | 2 | 190s | 24s | 71s | 8s | 13s | 22.2s | 9.0s | 82s |
+| 3 | 3 | 190s | 24s | 94s | 15s | 11s | 26.2s | 9.0s | 61s |
+| 4 | 1 | 189s | 27s | 86s | 9s | 10s | 19.6s | 9.0s | 66s |
+| 4 | 2 | 190s | 26s | 92s | 17s | 10s | 25.5s | 9.0s | 62s |
+| 4 | 3 | 187s | 25s | 91s | 15s | 10s | 24.5s | 7.0s | 61s |
+| 5 | 1 | 183s | 22s | 75s | 14s | 11s | 19.4s | 7.0s | 75s |
+| 5 | 2 | 182s | 22s | 83s | 10s | 11s | 20.4s | 7.0s | 66s |
+| 5 | 3 | 182s | 24s | 80s | 13s | 11s | 27.1s | 9.0s | 67s |
+
+† Round 1 run immediately after cluster upgrade completes; newly-promoted 4.18.26 container images not yet warm in registry (KTR ~175s). Excluded from statistics below.
+
+### Statistics (n=12, rounds 2–5)
+
+| Metric | Mean | Stdev | Min | Max |
+|---|---|---|---|---|
+| **Total** | **197s** | 17s | 182s | 226s |
+| VM Provisioning | 26s | 3s | 22s | 32s |
+| Boot 1 | 91s | 15s | 71s | 114s |
+| Rebase (total) | 13s | 3s | 8s | 17s |
+| Reboot | 11s | 1s | 10s | 13s |
+| systemd-analyze | 26s | 5s | 19s | 34s |
+| chrony-wait | 10s | 3s | 7s | 16s |
+| KTR | 69s | 6s | 61s | 82s |
+
+### Ostree Chunks
+
+51/51 chunks present on the boot image, 0 chunks needed — zero-byte fetch. This is the theoretical best case: the boot image content is essentially identical to the running node image, so the entire ostree layer is already cached locally.
+
+### Notes
+
+- **Rebase is nearly instant**: 8–17s (mean 13s) vs 22s for the native 4.18.24 boot image. With nothing to download, rebase time is purely apply overhead.
+- **Savings vs native baseline are modest**: 197s vs 213s — a 16s improvement despite eliminating the entire 437 MB fetch. This confirms ostree chunk fetch is not a significant bottleneck even at 1.2 GB.
+- **KTR dominates**: 69s mean (similar to all other 2-boot versions). Container image pulls are unaffected by boot image matching.
+- **Round 2 elevated**: VM provisioning 30–32s (vs ~24s normally) and KTR 69–71s are slightly above steady-state for rounds 3–5. The cluster was still fully settling after the upgrade.
+- **Same cluster, different version**: This test ran on OCP 4.18.26 (not 4.18.24), so absolute numbers may differ slightly from the primary study.
 
 ## OCP 4.18.40 — Newer Than Cluster (Forward Drift)
 
@@ -639,9 +698,9 @@ Same 3-boot path as 4.11.35, but each phase takes longer:
 
 ### Boot Image Age vs Scale-Up Time
 
-The study reveals three distinct regimes, plus a forward-drift data point:
+The study reveals three distinct regimes, plus two special-case data points:
 
-1. **2-boot images (4.12–4.18, including 4.18.40 newer)**: Total scale-up time is essentially flat at **202–227s** regardless of boot image age, RHEL version, or direction. This range includes both RHEL 9 (4.13–4.18) and RHEL 8 (4.12.40) boot images — all complete with a normal 2-boot sequence.
+1. **2-boot images (4.12–4.18, including exact-match, forward-drift)**: Total scale-up time spans **197–227s**. The exact-match boot image (4.18.27, 0 MB fetch) at 197s is only 16s faster than the native 4.18.24 boot image at 213s, and within noise of the oldest RHEL 9 (4.13.51, 224s) or the RHEL 8 4.12.40 (227s). All complete with a normal 2-boot sequence regardless of boot image age or direction.
 
 2. **3-boot images (4.11 and 4.10)**: A step-function increase appears. 4.11.35 jumps to **308s** and 4.10.20 to **334s** due to a 3-boot sequence requiring an intermediate RHEL 9 pivot. These are also RHEL 8 boot images, but unlike 4.12 they cannot rebase directly to the RHEL 9 target. The specific RHEL 8 version threshold that triggers the 3-boot path was not investigated further.
 
@@ -649,13 +708,14 @@ The study reveals three distinct regimes, plus a forward-drift data point:
 
 ### Ostree Chunk Sharing
 
+- **4.18.27 (exact match)**: 51/51 chunks present → 0 needed (0 MB fetch). Zero-byte rebase.
 - **4.18.40 (newer)**: 16/51 chunks present → 35 needed (596 MB fetch). Forward drift diverges chunks too.
 - **4.18.24 (native)**: 27/51 chunks present → 24 needed (437 MB fetch)
 - **4.18.0**: 7/51 present → 44 needed (1.2 GB). z-stream drift within 4.18 already costs 74% of chunks.
 - **4.17.35**: 7/51 present. Crossing a minor version boundary adds no additional chunk loss.
 - **4.16.41 and older**: 0/51 present. Total cache miss — every chunk fetched. Fetch volume plateaus at 1.2 GB.
 
-**Key finding**: Chunk sharing drops to zero within 2 minor versions in either direction. After that, ostree fetch volume is constant regardless of boot image age. This means the ostree rebase is NOT the reason older boot images are slower — the 3-boot path is. Forward drift (boot image newer than target) also causes chunk divergence, but at a similar rate to backward drift.
+**Key finding**: Chunk sharing drops to zero within 2 minor versions in either direction. After that, ostree fetch volume is constant regardless of boot image age. Eliminating fetch volume entirely (exact-match boot image, 0 MB) saves only ~16s vs the native boot image — confirming ostree rebase is NOT a significant bottleneck. The 3-boot path is the only meaningful penalty. Forward drift also causes chunk divergence at a similar rate to backward drift.
 
 ### The 3-Boot Penalty
 
@@ -677,5 +737,6 @@ The same 18 images (or 20 for baseline/4.10) totaling 10.2–12.1 GB are pulled 
 
 1. **Avoid the oldest RHEL 8 boot images** (4.11 and earlier) on RHEL 9 clusters — they trigger a 3-boot sequence adding ~80-110s (35-50% increase). RHEL 8 4.12 works fine with a normal 2-boot path.
 2. **Boot image age has negligible impact on scale-up time** across a wide range. A 4.12 (RHEL 8) boot image on a 4.18 cluster is within noise of the native 4.18 boot image.
-3. **Ostree chunk sharing plateaus quickly**: After 2 minor versions, all chunks are fetched regardless. The ~800 MB of extra fetch (437 MB → 1.2 GB) takes only ~10-15s additional rebase time.
-4. **The dominant bottleneck is container image pulls (~60s)**, not ostree rebase (~30-50s). Pre-pulling NodeReady images would benefit all versions equally.
+3. **Keeping boot images perfectly matched is not worth optimizing for**: The exact-match boot image (4.18.27 on 4.18.26, 0 MB fetch) saves only ~16s vs the native boot image (437 MB fetch). The ostree rebase phase simply isn't a bottleneck.
+4. **Ostree chunk sharing plateaus quickly**: After 2 minor versions, all chunks are fetched regardless. The ~800 MB of extra fetch (437 MB → 1.2 GB) takes only ~10-15s additional rebase time.
+5. **The dominant bottleneck is container image pulls (~60-70s)**, not ostree rebase (~13-50s). Pre-pulling NodeReady images would benefit all versions equally and would have a larger impact than any boot image optimization.
