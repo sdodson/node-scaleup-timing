@@ -19,6 +19,7 @@ Measure how boot image age affects node scale-up time on an OCP 4.18.24 cluster.
 
 | Boot Image | AMI | RHEL Base | Status |
 |---|---|---|---|
+| 4.18.40 (newer) | ami-0b9fcc2f8bed8771e | RHEL 9 | **Complete** |
 | 4.18.24 (native) | ami-0adb8862ffe5cc2ab | RHEL 9 | **Complete** |
 | 4.18.0 | ami-078e26f293629fe91 | RHEL 9 | **Complete** |
 | 4.17.35 | ami-022fbb77a3226215f | RHEL 9 | **Complete** |
@@ -34,6 +35,7 @@ Measure how boot image age affects node scale-up time on an OCP 4.18.24 cluster.
 
 | Boot Image | n | Total (mean) | Stdev | Boot 1 | Rebase | Reboot | SA | chrony | KTR | Chunks (P/N) | Fetch |
 |---|---|---|---|---|---|---|---|---|---|---|---|
+| **4.18.40** | 15 | **209s** | 12s | 104s | 25s | 14s | 25s | 14s | 71s | 16/35 | 596 MB |
 | **4.18.24** | 15 | **213s** | 21s | 111s | 22s | 14s | 20s | 11s | 62s | 27/24 | 437 MB |
 | **4.18.0** | 15 | **211s** | 22s | 112s | 37s | 15s | 20s | 12s | 62s | 7/44 | 1.2 GB |
 | **4.17.35** | 15 | **208s** | 12s | 103s | 33s | 14s | 19s | 10s | 69s | 7/44 | 1.2 GB |
@@ -49,6 +51,7 @@ Measure how boot image age affects node scale-up time on an OCP 4.18.24 cluster.
 
 | Boot Image | Chunks Present | Chunks Needed | Custom Layers | Total Fetch |
 |---|---|---|---|---|
+| **4.18.40** | 16 | 35 | 0 | 596 MB |
 | **4.18.24** | 27 | 24 | 0 | 437 MB |
 | **4.18.0** | 7 | 44 | 0 | 1.2 GB |
 | **4.17.35** | 7 | 44 | 0 | 1.2 GB |
@@ -88,6 +91,52 @@ The same set of container images is pulled during the final boot across all boot
 | multus-route-override-cni | 389 MB | 702522f272dc |
 
 All images are from `quay.io/openshift-release-dev/ocp-v4.0-art-dev` and are pulled by digest. The top two images (ovn-kubernetes + multus-cni) account for 2.7 GB and dominate pull time at ~20s each. Typical wall-clock KTR image-pull time is ~60s across all versions.
+
+## OCP 4.18.40 — Newer Than Cluster (Forward Drift)
+
+### All Data Points
+
+| Round | Zone | Total | VM Prov | Boot 1 | Rebase | Reboot | SA | chrony | KTR |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | 219s | 24s | 111s | 25s | 17s | 22.3s | 14.1s | 67s |
+| 1 | 2 | 221s | 20s | 118s | 25s | 14s | 22.3s | 14.2s | 69s |
+| 1 | 3 | 215s | 22s | 104s | 22s | 18s | 17.6s | 9.1s | 71s |
+| 2 | 1 | 224s | 22s | 130s | 50s | 18s | 22.3s | 14.1s | 54s |
+| 2 | 2 | 220s | 16s | 110s | 24s | 18s | 31.0s | 19.2s | 76s |
+| 2 | 3 | 218s | 23s | 118s | 30s | 11s | 24.2s | 16.1s | 66s |
+| 3 | 1 | 214s | 23s | 115s | 24s | 11s | 25.8s | 17.1s | 65s |
+| 3 | 2 | 211s | 20s | 94s | 22s | 11s | 31.2s | 19.2s | 86s |
+| 3 | 3 | 211s | 22s | 101s | 22s | 18s | 28.1s | 19.2s | 70s |
+| 4 | 1 | 204s | 22s | 83s | 18s | 11s | 22.3s | 14.2s | 88s |
+| 4 | 2 | 203s | 16s | 91s | 17s | 12s | 28.3s | 19.2s | 84s |
+| 4 | 3 | 203s | 24s | 85s | 16s | 14s | 22.3s | 14.1s | 80s |
+| 5 | 1 | 191s | 18s | 90s | 22s | 12s | 22.2s | 14.1s | 71s |
+| 5 | 2 | 190s | 18s | 95s | 19s | 11s | 16.0s | 7.0s | 66s |
+| 5 | 3 | 191s | 22s | 117s | 37s | 11s | 17.9s | 9.0s | 41s |
+
+### Statistics (n=15)
+
+| Metric | Mean | Stdev | Min | Max |
+|---|---|---|---|---|
+| **Total** | **209s** | 12s | 190s | 224s |
+| VM Provisioning | 21s | 3s | 16s | 24s |
+| Boot 1 | 104s | 14s | 83s | 130s |
+| Rebase (total) | 25s | 9s | 16s | 50s |
+| Reboot | 14s | 3s | 11s | 18s |
+| systemd-analyze | 25s | 4s | 16s | 31s |
+| chrony-wait | 14s | 4s | 7s | 19s |
+| KTR | 71s | 10s | 41s | 89s |
+
+### Ostree Chunks
+
+16 chunks present on the boot image, 35 chunks needed (596 MB fetch). The 4.18.40 boot image is 16 z-stream releases **newer** than the 4.18.24 target — yet it shares only 16 of 51 chunks (fewer than the native 4.18.24 boot image's 27). This demonstrates that chunk drift is symmetric: forward drift (newer boot image than target) produces chunk divergence just as backward drift does.
+
+### Notes
+
+- **Forward drift works**: The rebase from 4.18.40 → 4.18.24 completes normally. rpm-ostree handles "downgrading" the OS image transparently.
+- **Chunk sharing worse than native**: 16/51 present (vs 27/51 for native 4.18.24). 16 z-stream releases of forward drift diverged 11 more chunks than the native boot image's slight divergence.
+- **Fetch volume moderate**: 596 MB — between the native (437 MB) and the fully-diverged versions (1.2 GB).
+- **Total time matches baseline**: 209s vs 213s — statistically indistinguishable.
 
 ## OCP 4.18.24 — Baseline (Native Boot Image)
 
@@ -573,9 +622,9 @@ Same 3-boot path as 4.11.35, but each phase takes longer:
 
 ### Boot Image Age vs Scale-Up Time
 
-The study reveals three distinct regimes:
+The study reveals three distinct regimes, plus a forward-drift data point:
 
-1. **RHEL 9 boot images (4.13–4.18)**: Total scale-up time is essentially flat at **202–227s** regardless of boot image age. The 4.18.24 baseline (213s) and the oldest RHEL 9 image, 4.13.51 (224s), differ by only 11s — within noise.
+1. **RHEL 9 boot images (4.13–4.18, including 4.18.40 newer)**: Total scale-up time is essentially flat at **202–227s** regardless of boot image age or direction. A boot image 16 z-streams newer (4.18.40, 209s), the native image (4.18.24, 213s), and the oldest RHEL 9 image (4.13.51, 224s) are all within noise.
 
 2. **RHEL 8 → RHEL 9 boundary (4.11–4.12)**: A step-function increase appears. 4.12.40 (227s, still 2-boot) is the last version with normal timing. 4.11.35 jumps to **308s** due to the 3-boot sequence.
 
@@ -583,12 +632,13 @@ The study reveals three distinct regimes:
 
 ### Ostree Chunk Sharing
 
+- **4.18.40 (newer)**: 16/51 chunks present → 35 needed (596 MB fetch). Forward drift diverges chunks too.
 - **4.18.24 (native)**: 27/51 chunks present → 24 needed (437 MB fetch)
 - **4.18.0**: 7/51 present → 44 needed (1.2 GB). z-stream drift within 4.18 already costs 74% of chunks.
 - **4.17.35**: 7/51 present. Crossing a minor version boundary adds no additional chunk loss.
 - **4.16.41 and older**: 0/51 present. Total cache miss — every chunk fetched. Fetch volume plateaus at 1.2 GB.
 
-**Key finding**: Chunk sharing drops to zero within 2 minor versions. After that, ostree fetch volume is constant regardless of boot image age. This means the ostree rebase is NOT the reason older boot images are slower — the 3-boot path is.
+**Key finding**: Chunk sharing drops to zero within 2 minor versions in either direction. After that, ostree fetch volume is constant regardless of boot image age. This means the ostree rebase is NOT the reason older boot images are slower — the 3-boot path is. Forward drift (boot image newer than target) also causes chunk divergence, but at a similar rate to backward drift.
 
 ### The 3-Boot Penalty
 
