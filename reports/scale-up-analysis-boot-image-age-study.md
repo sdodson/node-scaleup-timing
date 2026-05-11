@@ -831,6 +831,117 @@ Same 3-boot path as 4.11.35, but each phase takes longer:
 - **Boot -1 much longer**: 83s mean (vs 61s for 4.11.35). The 4.10 → 4.18 rebase requires more work in the intermediate RHEL 9 boot, possibly due to a larger delta between the intermediate image and the final target.
 - **R5-Z2 outlier**: Boot -2 of 206s drove total to 380s.
 
+## Where Time Goes: Exact-Match Boot Image (Best Case)
+
+The two exact-match test cases — 4.18.27 on cluster 4.18.26, and 4.19.23 on cluster 4.19.22 — represent the theoretical best case for each architecture: no RHCOS chunk fetch, most-current boot image. Examining where the 197s and 216s go reveals the irreducible costs that any future optimization must work around.
+
+### Phase Breakdown
+
+| Phase | 4.18.27 exact match (n=12) | 4.19.23 exact match (n=15) |
+|---|---|---|
+| VM Provisioning | 26s | 22s |
+| Boot 1: pre-rebase | 78s | 78s |
+| Boot 1: rebase | 13s | 36s |
+| **Boot 1 total** | **91s** | **114s** |
+| Reboot gap | 11s | 12s |
+| Boot 2: KTR | 69s | 69s |
+| **Total** | **197s** | **216s** |
+
+*pre-rebase = boot1_total − rebase_total*
+
+The pre-rebase cost is **identical at 78s** across both architectures. The 19s difference between the two totals is entirely accounted for by:
+
+- VM provisioning: −4s (4.19.22 cluster provisions slightly faster)
+- Rebase: +23s (4.19.23 always fetches 220 MB of OCP custom layers; 4.18.27 has nothing to fetch)
+- Reboot, KTR: ±1s (within noise)
+
+The 4.18.x node image has no custom layers — rebase with a perfect cache hit is pure apply overhead (~13s). The 4.19.x node image always fetches OCP-specific custom layers (kubelet, cri-o, etc.) regardless of boot image freshness, adding a fixed ~23s of fetch time even in the exact-match case.
+
+### Boot 1 Sub-Phases (Journal Timeline)
+
+The Boot 1 journal from two representative samples shows the sequence of events from first kernel entry. These are individual runs (faster than average for each series); the sub-phase ordering and durations are consistent across all runs, though absolute times scale with network and registry conditions.
+
+**4.18.27 r3-z1 — Boot 1 (this run: 82s; series mean: 91s)**:
+
+| Elapsed | Event |
+|---|---|
+| +0s | First kernel log entry |
+| +12s | Switch root to real OS filesystem |
+| +28s | MCD container image pull starts (937 MB machine-config-daemon image) |
+| +40s | MCD image pull complete (~12s) |
+| +41s | MCD firstboot update begins |
+| +59s | rpm-ostree rebase initiated (`Initiated txn Rebase`) |
+| +73s | rpm-ostree deployment created — 0 chunks fetched, apply only (~14s rebase) |
+| +76s | Reboot |
+
+**4.19.23 r2-z1 — Boot 1 (this run: 85s; series mean: 114s)**:
+
+| Elapsed | Event |
+|---|---|
+| +0s | First kernel log entry |
+| +12s | Switch root |
+| +24s | MCD image pull starts |
+| +36s | MCD image pull complete (~12s) |
+| +37s | MCD firstboot update begins |
+| +54s | rpm-ostree rebase initiated |
+| +67s | First custom layer fetch begins (2 layers, 219.6 MB total) |
+| +80s | rpm-ostree deployment created (~26s rebase: pre-fetch setup + custom layer fetch/apply) |
+| +85s | Reboot |
+
+Both specific samples ran faster than their series means; the longer mean pre-rebase (78s) reflects run-to-run variability in registry response time and system load during the MCD startup and pre-rebase phases.
+
+Pre-rebase time is distributed across four components (proportions from representative samples):
+
+1. **Kernel + initrd + Ignition + switch root**: ~12s — the time from first kernel log to switch-root completion. Essentially the same across all runs and all boot image versions. Non-compressible given the boot process.
+2. **Switch root → MCD pull start**: ~12–16s — real-root systemd starts, `machine-config-daemon.service` is activated, and the container image download begins. Network readiness and unit startup sequencing determine this gap.
+3. **MCD image pull**: ~12s — fetching the MCD container image. 937 MB (gzip) in 4.18.27; the 4.19.23 pull is similarly sized but MCD may be structured differently (total MCD-related time is shorter in 4.19.23). This phase is network-bound.
+4. **MCD startup + pre-rebase**: ~18–20s — MCD daemon initializes, reads the cluster MachineConfig, decides what changes to apply, and calls rpm-ostree. This is compute and IPC time, not network.
+
+The total pre-rebase mean (78s) is driven by the sum of these; stdev within each series (15s for 4.18.27, 16s for 4.19.23 boot1) reflects variance primarily in components 2 and 4.
+
+### Boot 2 / KTR Breakdown
+
+`ktr_s` as measured by `extract-timings.sh` is the interval from Boot 2 first kernel journal entry to NodeReady — it spans all of Boot 2, not just the post-kubelet window.
+
+| Component | 4.18.27 | 4.19.23 |
+|---|---|---|
+| systemd-analyze (kernel → operational) | 26s | 22s |
+| — chrony-wait | 10s | 13s |
+| — other systemd | 16s | 9s |
+| Post-SA to NodeReady (CSR + CNI pulls) | ~43s | ~47s |
+| **KTR total** | **69s** | **69s** |
+
+*Post-SA = KTR − systemd-analyze*
+
+CSR approval is near-instant (<2s); the ~43-47s post-SA interval is dominated by CNI container image pulls (multus-cni ~1.4 GB and ovn-kubernetes ~1.4 GB). These images are not on the boot AMI and must be pulled before the node can become Ready. CRI-O parallelizes the pulls — wall clock is ~43-47s rather than the sum of individual pull times.
+
+chrony-wait differs: ~10s for 4.18.27 vs ~13s for 4.19.23 — both well below the ~24s Azure PHC refclock cost, reflecting typical AWS NTP sync timing on fresh instances. The 3-4s difference is within run-to-run variance and is not architecturally meaningful.
+
+KTR is identical (69s) across both exact-match cases, confirming that boot image version and OCP architecture (4.18 vs 4.19) have no effect on container image pull time. Boot image age affects only Boot 1; Boot 2 / KTR is determined by registry network throughput and cluster CSR processing.
+
+### Optimization Opportunities in the Best Case
+
+With the ostree chunk fetch already eliminated, the remaining time breaks down into compressible and non-compressible portions:
+
+| Component | 4.18.27 | 4.19.23 | Compressible? |
+|---|---|---|---|
+| VM provisioning | 26s | 22s | Partially — hardware/hypervisor bound |
+| Kernel + initrd + switch root | ~12s | ~12s | No — irreducible boot process |
+| Switch root → MCD pull start | ~14s | ~12s | Possibly — faster unit activation |
+| MCD image pull | ~12s | ~12s | Yes — zstd:chunked → partial pull |
+| MCD startup + pre-rebase | ~18s | ~18s | Possibly — MCD code path |
+| Rebase | 13s | 36s | 4.18: near-floor; 4.19: fixed by custom layers |
+| Reboot gap | 11s | 12s | No — POST + bootloader |
+| chrony-wait | 10s | 13s | Partially — tunable, already fast on AWS |
+| Other Boot 2 systemd | 16s | 9s | Minimal |
+| CSR + CNI image pulls | ~43s | ~47s | Yes — pre-pulling CNI into boot AMI |
+
+The two highest-impact opportunities at this baseline:
+
+1. **Pre-pull CNI images into the boot AMI** (~40-45s savings): The 43-47s post-SA window is almost entirely CNI image pulls (multus-cni + ovn-kubernetes, ~3 GB combined). If these images were baked into the boot AMI, this phase collapses to near zero. This is the single largest remaining bottleneck even in the best-case scenario — it dwarf the ostree rebase cost regardless of chunk sharing.
+
+2. **MCD image: zstd:chunked + partial image pull** (~8-10s savings): The MCD image must be fully pulled before rpm-ostree runs. With zstd:chunked and `enable_partial_images = "true"` in storage.conf, podman could fetch only the files needed to start `machine-config-daemon` — a small fraction of the full 937 MB — and skip the rest. The 4.19 MCD image already appears to require less pull time (~19s total MCD pull + startup vs ~35s in 4.18.27), suggesting the 4.19 image may already be more efficiently structured.
+
 ## Conclusions
 
 ### Boot Image Age vs Scale-Up Time
