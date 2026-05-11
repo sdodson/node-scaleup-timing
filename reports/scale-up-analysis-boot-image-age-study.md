@@ -31,8 +31,9 @@ Total Scale-Up Time by Boot Image Version (mean, steady-state samples)
             0       100       200       300       400
                               seconds
 
-  4.19+ architecture (cluster 4.19.22, exact-match boot image — 0 ostree chunks + 220 MB custom layers):
-    4.19.23 |█████████████████████░ 216s  ← exact match (n=15); stale boot image adds ostree chunks on top
+  4.19+ architecture (boot AMI = 4.19.23; custom layers always fetched on top of any ostree chunk fetch):
+        4.19.23 |█████████████████████░ 216s  ← cluster 4.19.22, exact match (n=15)
+ 4.19.23→4.19.30 |██████████████████████░225s  ← cluster 4.19.30, 7 z-streams stale (n=14 ex-outlier)
 
 Ostree Chunk Sharing (51 total chunks)
 
@@ -50,9 +51,10 @@ Ostree Chunk Sharing (51 total chunks)
     4.10.20 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
              █ = cached on boot image    ░ = fetched during rebase
 
-  4.19+ exact-match (boot AMI = node image RHCOS base; custom layers always fetched additionally):
-    4.19.23 |███████████████████████████████████████  51 present /  0 needed + 2 custom layers (220 MB)
-             █ = RHCOS base cached    custom layers always fetched (stale boot → ostree chunks added on top)
+  4.19+ (boot AMI = 4.19.23; custom layers always fetched on top, sized to the cluster's OCP version):
+        4.19.23 |███████████████████████████████████████  51 RHCOS present /  0 needed + 2 CL (220 MB) = 220 MB total
+ 4.19.23→4.19.30 |████████████████░░░░░░░░░░░░░░░░░░░░░░░  16 RHCOS present / 35 needed + 2 CL (187 MB) = 708 MB total
+                  █ = RHCOS cached    ░ = RHCOS fetched    CL = custom layers (always fetched, not shown in bar)
 ```
 
 **Practical takeaway**: There is no urgency to refresh boot images frequently. Even eliminating the ostree fetch entirely (exact-match boot image) only saves ~16s vs the native boot image, because the container image pull phase (~69s) dominates. Only the oldest RHEL 8 images (4.11 and earlier) trigger the costly 3-boot path. In 4.19+, the OCP custom layers (220 MB) become an additional fixed cost that is always fetched on top of any ostree chunk drift — the boot image staleness problem still exists, it just starts from a higher floor.
