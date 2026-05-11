@@ -197,6 +197,7 @@ Archived data from OCP 4.18. Kept for reference but not actively maintained or r
 
 | Optimization | Estimated Savings | Difficulty |
 |-------------|-------------------|------------|
+| Build MCD image with zstd:chunked; enable `enable_partial_images` in storage.conf | ~15-25s (Boot 1) | Medium — ART image rebuild + MCO storage.conf MachineConfig |
 | Pre-pull CNI images (multus, OVN-K) into base AMI/image | 20-30s | Medium — custom image build |
 | Use newer VM generation (v3->v5 Azure, m6a->m8a AWS) | 1-2m | Easy — change MachineSet instanceType/vmSize |
 | Tune chrony (`poll 2`, `minsamples 1`) on Azure | 12-20s | Medium — MachineConfig change |
