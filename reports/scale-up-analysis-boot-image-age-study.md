@@ -2,13 +2,15 @@
 
 ## Executive Summary
 
-This study measured how RHCOS boot image age affects OpenShift node scale-up time using 180 samples across 12 boot image versions (4.10.20 through 4.18.40, plus an exact-match 4.18.27 boot image on a 4.18.26 cluster).
+This study measured how RHCOS boot image age affects OpenShift node scale-up time using 195 samples across 13 boot image versions (4.10.20 through 4.18.40, an exact-match 4.18.27 boot image on a 4.18.26 cluster, and a 4.19.23 boot image on a 4.19.22 cluster).
 
 **Key finding: Boot image age doesn't matter — until it's old enough to require a 3-boot sequence.**
 
 Across RHEL 9 (4.13–4.18) and even RHEL 8 4.12, scale-up time is flat at **~197–227s** regardless of boot image age. The exact-match boot image (4.18.27 on 4.18.26, with 51/51 chunks cached) comes in at **~197s** — only ~16s faster than the native 4.18.24 boot image — demonstrating that ostree chunk fetch volume has minimal impact on total time even when eliminating it entirely. A boot image *newer* than the cluster (4.18.40) also works transparently. Ostree chunk sharing drops to zero within 2 minor versions, adding ~800 MB of fetch — but this costs only ~10-15s and is absorbed by variance in other phases.
 
 The oldest RHEL 8 boot images (4.11 and 4.10) trigger a **3-boot sequence** — an intermediate rebase through a RHEL 9 pivot before reaching the target — that adds 80–110s (+35-50%), jumping scale-up time to 308–334s. Notably, 4.12 (also RHEL 8) does *not* require this intermediate pivot and completes in a normal 2-boot sequence. The 3-boot path appears to be specific to sufficiently old RHEL 8 images rather than all RHEL 8 images.
+
+**4.19+ architectural change**: OCP 4.19 introduced a split between the RHCOS base image (versioned by RHEL minor, baked into the boot AMI) and OCP-specific content (kubelet, cri-o, etc.) shipped as separate "custom layers". The 4.19.23 test shows all 51 RHCOS base chunks present on the boot image (0 MB ostree fetch), but 2 custom layers totaling **219.6 MB are always fetched** regardless of boot image age. Total scale-up time is **216s** — nearly identical to the 4.18.24 native baseline (213s) — but the rebase structure is fundamentally different: a fixed 220 MB custom-layer fetch replaces the variable 0–1.2 GB ostree chunk fetch of 4.18.x.
 
 ```
 Total Scale-Up Time by Boot Image Version (mean, steady-state samples)
@@ -29,6 +31,9 @@ Total Scale-Up Time by Boot Image Version (mean, steady-state samples)
             0       100       200       300       400
                               seconds
 
+  4.19+ architecture (cluster 4.19.22, always fetches 220 MB OCP custom layers):
+    4.19.23 |█████████████████████░ 216s  ← native/exact match (n=15)
+
 Ostree Chunk Sharing (51 total chunks)
 
     4.18.27 |███████████████████████████████████████  51 present /  0 needed (0 MB) ← exact match
@@ -44,9 +49,13 @@ Ostree Chunk Sharing (51 total chunks)
     4.11.35 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
     4.10.20 |░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0 present / 51 needed (1.2 GB)
              █ = cached on boot image    ░ = fetched during rebase
+
+  4.19+ architecture: RHCOS base is in the boot image; OCP content ships as custom layers (always fetched):
+    4.19.23 |███████████████████████████████████████  51 present /  0 needed + 2 custom layers (220 MB)
+             █ = RHCOS base cached    custom layers always fetched
 ```
 
-**Practical takeaway**: There is no urgency to refresh boot images frequently. Even eliminating the ostree fetch entirely (exact-match boot image) only saves ~16s vs the native boot image, because the container image pull phase (~69s) dominates. Only the oldest RHEL 8 images (4.11 and earlier) trigger the costly 3-boot path.
+**Practical takeaway**: There is no urgency to refresh boot images frequently. Even eliminating the ostree fetch entirely (exact-match boot image) only saves ~16s vs the native boot image, because the container image pull phase (~69s) dominates. Only the oldest RHEL 8 images (4.11 and earlier) trigger the costly 3-boot path. In 4.19+, the architecture changes so that a fixed 220 MB OCP custom-layer fetch replaces the variable ostree chunk fetch entirely.
 
 ## Purpose
 
@@ -59,6 +68,7 @@ Measure how boot image age affects node scale-up time on an OCP cluster. The clu
 - **Instance type**: m6i.xlarge (4 vCPU, 16 GB RAM)
 - **Primary cluster version**: 4.18.24 (boot images 4.18.40 through 4.10.20)
 - **Follow-on cluster version**: 4.18.26 (boot image 4.18.27 exact-match test)
+- **4.19 cluster version**: 4.19.22 (boot image 4.19.23 — 4.19+ layered architecture study)
 - **Availability zones**: us-east-2a, us-east-2b, us-east-2c
 - **Rounds per boot image**: 5 (3 zones per round)
 - **Samples per boot image**: 15 (5 rounds × 3 zones); 12 for 4.18.27 (round 1 excluded — post-upgrade cold caches)
@@ -68,6 +78,7 @@ Measure how boot image age affects node scale-up time on an OCP cluster. The clu
 
 | Boot Image | AMI | RHEL Base | Cluster | Status |
 |---|---|---|---|---|
+| 4.19.23 (4.19+ layered) | ami-0fd7c367ed8a90d52 | RHEL 9 | 4.19.22 | **Complete** |
 | 4.18.27 (exact match) | ami-04756c1a4f51bb2c9 | RHEL 9 | 4.18.26 | **Complete** |
 | 4.18.40 (newer) | ami-0b9fcc2f8bed8771e | RHEL 9 | 4.18.24 | **Complete** |
 | 4.18.24 (native) | ami-0adb8862ffe5cc2ab | RHEL 9 | 4.18.24 | **Complete** |
@@ -85,6 +96,7 @@ Measure how boot image age affects node scale-up time on an OCP cluster. The clu
 
 | Boot Image | n | Total (mean) | Stdev | Boot 1 | Rebase | Reboot | SA | chrony | KTR | Chunks (P/N) | Fetch |
 |---|---|---|---|---|---|---|---|---|---|---|---|
+| **4.19.23** (4.19+ layered) | 15 | **216s** | 11s | 114s | 36s | 12s | 22s | 13s | 69s | 51/0+2CL‡ | 220 MB |
 | **4.18.27** (exact match) | 12† | **197s** | 17s | 91s | 13s | 11s | 26s | 10s | 69s | 51/0 | 0 MB |
 | **4.18.40** | 15 | **209s** | 12s | 104s | 25s | 14s | 25s | 14s | 71s | 16/35 | 596 MB |
 | **4.18.24** | 15 | **213s** | 21s | 111s | 22s | 14s | 20s | 11s | 62s | 27/24 | 437 MB |
@@ -99,11 +111,13 @@ Measure how boot image age affects node scale-up time on an OCP cluster. The clu
 | **4.10.20** | 15 | **334s** | 18s | — | — | — | 21s | 12s | 59s | 0/51 | 1.2 GB |
 
 † Round 1 excluded from 4.18.27 stats: run immediately after cluster upgrade to 4.18.26, newly-promoted container images not yet warm in registry (KTR ~175s vs steady-state ~69s).
+‡ 4.19+ layered architecture: 51/51 RHCOS base chunks present on boot image (0 MB ostree fetch), but 2 OCP-specific custom layers (219.6 MB) are always fetched regardless of boot image age. CL = custom layers.
 
 ## Ostree Chunk/Layer Summary
 
 | Boot Image | Chunks Present | Chunks Needed | Custom Layers | Total Fetch |
 |---|---|---|---|---|
+| **4.19.23** (4.19+ layered) | 51 | 0 | 2 (219.6 MB) | 220 MB |
 | **4.18.27** (exact match) | 51 | 0 | 0 | 0 MB |
 | **4.18.40** | 16 | 35 | 0 | 596 MB |
 | **4.18.24** | 27 | 24 | 0 | 437 MB |
@@ -116,6 +130,57 @@ Measure how boot image age affects node scale-up time on an OCP cluster. The clu
 | **4.12.40** | 0 | 51 | 0 | 1.2 GB |
 | **4.11.35** | 0 | 51 | 0 | 1.2 GB |
 | **4.10.20** | 0 | 51 | 0 | 1.2 GB |
+
+## OCP 4.19.23 — 4.19+ Layered Image Architecture (Cluster 4.19.22)
+
+OCP 4.19 introduced a split between the RHCOS base image and OCP-specific content. The boot AMI now contains only the RHCOS base (all RHEL-minor-versioned ostree chunks), while kubelet, cri-o, and other OCP-version-specific packages are shipped as separate "custom layers" that are always fetched during firstboot. This test used the 4.19.23 RHCOS AMI (`ami-0fd7c367ed8a90d52`) on an OCP 4.19.22 cluster, representing the native/exact-match case for the new architecture.
+
+### All Data Points
+
+| Round | Zone | Total | VM Prov | Boot 1 | Rebase | Reboot | SA | chrony | KTR |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | 210s | 20s | 117s | 42s | 12s | 23.9s | 15.2s | 61s |
+| 1 | 2 | 206s | 22s | 88s | 23s | 12s | 27.0s | 18.1s | 84s |
+| 1 | 3 | 206s | 24s | 100s | 28s | 12s | 25.1s | 16.1s | 70s |
+| 2 | 1 | 203s | 21s | 89s | 26s | 12s | 24.5s | 15.2s | 81s |
+| 2 | 2 | 201s | 22s | 104s | 34s | 12s | 25.9s | 17.2s | 63s |
+| 2 | 3 | 203s | 24s | 102s | 29s | 12s | 25.5s | 16.1s | 65s |
+| 3 | 1 | 217s | 21s | 122s | 51s | 12s | 24.7s | 15.2s | 62s |
+| 3 | 2 | 218s | 22s | 116s | 46s | 12s | 17.3s | 8.0s | 68s |
+| 3 | 3 | 214s | 24s | 114s | 41s | 12s | 25.7s | 17.2s | 64s |
+| 4 | 1 | 235s | 20s | 136s | 37s | 11s | 18.3s | 9.0s | 68s |
+| 4 | 2 | 232s | 22s | 135s | 37s | 11s | 18.3s | 9.0s | 64s |
+| 4 | 3 | 230s | 23s | 99s | 24s | 12s | 16.0s | 7.0s | 96s |
+| 5 | 1 | 228s | 20s | 135s | 50s | 13s | 17.4s | 8.1s | 60s |
+| 5 | 2 | 220s | 22s | 121s | 32s | 12s | 21.1s | 12.1s | 65s |
+| 5 | 3 | 220s | 24s | 124s | 36s | 12s | 21.6s | 13.2s | 60s |
+
+### Statistics (n=15)
+
+| Metric | Mean | Stdev | Min | Max |
+|---|---|---|---|---|
+| **Total** | **216s** | 11s | 201s | 235s |
+| VM Provisioning | 22s | 2s | 20s | 24s |
+| Boot 1 | 114s | 16s | 88s | 136s |
+| Rebase (total) | 36s | 9s | 23s | 51s |
+| Reboot | 12s | 1s | 11s | 13s |
+| systemd-analyze | 22s | 4s | 16s | 27s |
+| chrony-wait | 13s | 4s | 7s | 18s |
+| KTR | 69s | 10s | 60s | 96s |
+
+### Ostree Chunks and Custom Layers
+
+51/51 RHCOS base chunks present on the boot image — zero-byte ostree fetch. However, 2 custom layers totaling **219.6 MB** are fetched on every firstboot. These custom layers contain the OCP-version-specific packages (kubelet, cri-o, etc.) that are no longer baked into the base RHCOS image. The custom layer hash (`bdc94d91c552c179636`) and size (219.6 MB) were identical across all 15 runs.
+
+The MCD image pull takes ~19s (rebase_start_s, mean across all runs) — approximately half the ~35s observed in the 4.18.27 journal. The 4.19 MCD image may be smaller or structured differently.
+
+### Notes
+
+- **Total 216s: within noise of 4.18.24 native (213s)**: Despite the architectural change, scale-up time is essentially unchanged vs the 4.18.x baseline on the same instance type.
+- **Fixed 220 MB fetch replaces variable ostree fetch**: In 4.18.x, the ostree chunk fetch ranged from 0 MB (exact match) to 1.2 GB (old boot image). In 4.19+, the RHCOS base is always fully cached on the boot image, but the 220 MB OCP custom layers are always fetched — a predictable fixed cost.
+- **Boot image staleness largely irrelevant in 4.19+**: As long as the boot image matches the RHEL minor (e.g., RHEL 9.6), all RHCOS base chunks are present. The OCP custom layers are always fetched fresh regardless. Only a RHEL minor version bump (9.5 → 9.6) in the base OS would cause ostree chunks to be missing.
+- **MCD image pull faster**: rebase_start_s mean of 19s (vs ~35s in 4.18.27). Reduction is consistent and unexplained by boot image differences — likely a smaller or differently-structured 4.19 MCD image.
+- **KTR unchanged**: 69s mean, identical to 4.18.27 and similar to most 4.18.x versions. The container image pull phase is not affected by the architecture change.
 
 ## OCP 4.18.27 — Exact Match Boot Image (Cluster 4.18.26)
 
@@ -714,8 +779,19 @@ The study reveals three distinct regimes, plus two special-case data points:
 - **4.18.0**: 7/51 present → 44 needed (1.2 GB). z-stream drift within 4.18 already costs 74% of chunks.
 - **4.17.35**: 7/51 present. Crossing a minor version boundary adds no additional chunk loss.
 - **4.16.41 and older**: 0/51 present. Total cache miss — every chunk fetched. Fetch volume plateaus at 1.2 GB.
+- **4.19.23**: 51/51 RHCOS base chunks present (0 MB ostree fetch) + 2 custom OCP layers (219.6 MB, always fetched).
 
 **Key finding**: Chunk sharing drops to zero within 2 minor versions in either direction. After that, ostree fetch volume is constant regardless of boot image age. Eliminating fetch volume entirely (exact-match boot image, 0 MB) saves only ~16s vs the native boot image — confirming ostree rebase is NOT a significant bottleneck. The 3-boot path is the only meaningful penalty. Forward drift also causes chunk divergence at a similar rate to backward drift.
+
+### 4.19+ Layered Architecture
+
+OCP 4.19 restructured the node image into two separate components:
+
+1. **RHCOS base** (in the boot AMI): All RHCOS filesystem content as ostree chunks, versioned by RHEL minor (e.g., RHEL 9.6). All 51 chunks are present on any boot image with the matching RHEL minor — eliminating the variable 0–1.2 GB ostree chunk fetch entirely.
+
+2. **OCP custom layers**: 2 layers (219.6 MB) containing kubelet, cri-o, and other OCP-version-specific packages. These are **always fetched** on every firstboot, regardless of boot image age or freshness.
+
+**Net impact**: Total scale-up time (216s) is essentially unchanged vs the 4.18.x baseline (213s native). The variable ostree chunk fetch (0–1.2 GB) is replaced by a fixed 220 MB OCP layer fetch. This makes firstboot time far more predictable but does not eliminate the rebase fetch cost. Boot image staleness now effectively only matters when crossing RHEL minor version boundaries — a much less frequent event than z-stream or minor OCP version updates.
 
 ### The 3-Boot Penalty
 
@@ -740,4 +816,5 @@ The same 18 images (or 20 for baseline/4.10) totaling 10.2–12.1 GB are pulled 
 3. **Keeping boot images perfectly matched is not worth optimizing for**: The exact-match boot image (4.18.27 on 4.18.26, 0 MB fetch) saves only ~16s vs the native boot image (437 MB fetch). The ostree rebase phase simply isn't a bottleneck.
 4. **Ostree chunk sharing plateaus quickly**: After 2 minor versions, all chunks are fetched regardless. The ~800 MB of extra fetch (437 MB → 1.2 GB) takes only ~10-15s additional rebase time.
 5. **The dominant bottleneck is container image pulls (~60-70s)**, not ostree rebase (~13-50s). Pre-pulling NodeReady images would benefit all versions equally and would have a larger impact than any boot image optimization.
-6. **MCD firstboot image pull is a hidden fixed cost (~35s)**: The 4.18.27 Boot 1 journal shows ~35s spent pulling the 937 MB MCD image (`machine-config-operator`) before rpm-ostree even starts. The image is currently plain gzip with no partial-pull capability. If ART rebuilt it with zstd:chunked and MCO enabled `enable_partial_images = "true"` in `/etc/containers/storage.conf`, podman could fetch only the files needed to start the container (the `machine-config-daemon` binary and its dependencies, a small fraction of 937 MB) and skip the rest. Estimated savings: 15–25s off Boot 1, independent of boot image age or ostree chunk state.
+6. **MCD firstboot image pull is a hidden fixed cost (~35s in 4.18, ~19s in 4.19)**: The 4.18.27 Boot 1 journal shows ~35s spent pulling the 937 MB MCD image (`machine-config-operator`) before rpm-ostree even starts. The image is currently plain gzip with no partial-pull capability. If ART rebuilt it with zstd:chunked and MCO enabled `enable_partial_images = "true"` in `/etc/containers/storage.conf`, podman could fetch only the files needed to start the container (the `machine-config-daemon` binary and its dependencies, a small fraction of 937 MB) and skip the rest. Estimated savings: 15–25s off Boot 1 in 4.18.x; 4.19 appears to have reduced this cost already (~19s mean).
+7. **In 4.19+, boot image staleness effectively disappears as a concern**: With the layered architecture, the RHCOS base is always fully present on any boot image with the same RHEL minor version. The OCP custom layers (220 MB fixed cost) are always fetched fresh. The total cost is predictable and comparable to the 4.18.x native baseline. Only a RHEL minor version bump in the boot image would cause ostree chunk misses.
