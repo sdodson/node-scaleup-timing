@@ -78,7 +78,8 @@ Measure how boot image age affects node scale-up time on an OCP cluster. The clu
 
 | Boot Image | AMI | RHEL Base | Cluster | Status |
 |---|---|---|---|---|
-| 4.19.23 (4.19+ layered) | ami-0fd7c367ed8a90d52 | RHEL 9 | 4.19.22 | **Complete** |
+| 4.19.23 (4.19+ layered, stale) | ami-0fd7c367ed8a90d52 | RHEL 9 | 4.19.30 | **Complete** |
+| 4.19.23 (4.19+ layered, exact match) | ami-0fd7c367ed8a90d52 | RHEL 9 | 4.19.22 | **Complete** |
 | 4.18.27 (exact match) | ami-04756c1a4f51bb2c9 | RHEL 9 | 4.18.26 | **Complete** |
 | 4.18.40 (newer) | ami-0b9fcc2f8bed8771e | RHEL 9 | 4.18.24 | **Complete** |
 | 4.18.24 (native) | ami-0adb8862ffe5cc2ab | RHEL 9 | 4.18.24 | **Complete** |
@@ -96,7 +97,8 @@ Measure how boot image age affects node scale-up time on an OCP cluster. The clu
 
 | Boot Image | n | Total (mean) | Stdev | Boot 1 | Rebase | Reboot | SA | chrony | KTR | Chunks (P/N) | Fetch |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| **4.19.23** (4.19+ layered) | 15 | **216s** | 11s | 114s | 36s | 12s | 22s | 13s | 69s | 51/0+2CL‡ | 220 MB |
+| **4.19.23** boot → cluster 4.19.30 (stale) | 15 | **233s**§ | 34s | 125s | 37s | 15s | 23s | 10s | 71s | 16/35+2CL‡ | 708 MB |
+| **4.19.23** (exact match, cluster 4.19.22) | 15 | **216s** | 11s | 114s | 36s | 12s | 22s | 13s | 69s | 51/0+2CL‡ | 220 MB |
 | **4.18.27** (exact match) | 12† | **197s** | 17s | 91s | 13s | 11s | 26s | 10s | 69s | 51/0 | 0 MB |
 | **4.18.40** | 15 | **209s** | 12s | 104s | 25s | 14s | 25s | 14s | 71s | 16/35 | 596 MB |
 | **4.18.24** | 15 | **213s** | 21s | 111s | 22s | 14s | 20s | 11s | 62s | 27/24 | 437 MB |
@@ -111,13 +113,15 @@ Measure how boot image age affects node scale-up time on an OCP cluster. The clu
 | **4.10.20** | 15 | **334s** | 18s | — | — | — | 21s | 12s | 59s | 0/51 | 1.2 GB |
 
 † Round 1 excluded from 4.18.27 stats: run immediately after cluster upgrade to 4.18.26, newly-promoted container images not yet warm in registry (KTR ~175s vs steady-state ~69s).
-‡ 4.19+ layered architecture: 51/51 RHCOS base chunks present on boot image (0 MB ostree fetch), but 2 OCP-specific custom layers (219.6 MB) are always fetched regardless of boot image age. CL = custom layers.
+‡ 4.19+ layered architecture: CL = custom layers (OCP-specific packages, always fetched). 51/0+2CL = exact-match (0 RHCOS chunks needed, 2 custom layers). 16/35+2CL = 7 z-streams of drift (35 RHCOS chunks needed, 2 custom layers with updated content).
+§ R5-Z1 outlier (347s, KTR=179s) included in mean; excluding it gives 225s mean.
 
 ## Ostree Chunk/Layer Summary
 
 | Boot Image | Chunks Present | Chunks Needed | Custom Layers | Total Fetch |
 |---|---|---|---|---|
-| **4.19.23** (4.19+ layered) | 51 | 0 | 2 (219.6 MB) | 220 MB |
+| **4.19.23** boot → cluster 4.19.30 (stale) | 16 | 35 (520 MB) | 2 (187.4 MB) | 708 MB |
+| **4.19.23** (exact match, cluster 4.19.22) | 51 | 0 | 2 (219.6 MB) | 220 MB |
 | **4.18.27** (exact match) | 51 | 0 | 0 | 0 MB |
 | **4.18.40** | 16 | 35 | 0 | 596 MB |
 | **4.18.24** | 27 | 24 | 0 | 437 MB |
@@ -130,6 +134,72 @@ Measure how boot image age affects node scale-up time on an OCP cluster. The clu
 | **4.12.40** | 0 | 51 | 0 | 1.2 GB |
 | **4.11.35** | 0 | 51 | 0 | 1.2 GB |
 | **4.10.20** | 0 | 51 | 0 | 1.2 GB |
+
+## OCP 4.19.23 Boot Image on Cluster 4.19.30 — 7 Z-Streams of Drift
+
+This test kept the boot AMI fixed at 4.19.23 (`ami-0fd7c367ed8a90d52`) while the cluster upgraded to 4.19.30 — 7 z-stream releases of drift. This directly tests the claim that RHCOS base chunk drift accumulates in 4.19+ the same way as in 4.18.x, with the custom layers as an additional fixed cost on top.
+
+### All Data Points
+
+| Round | Zone | Total | VM Prov | Boot 1 | Rebase | Reboot | SA | chrony | KTR |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | 208s | 21s | 116s | 34s | 13s | 17.9s | 9.0s | 58s |
+| 1 | 2 | 216s | 22s | 116s | 34s | 18s | 17.5s | 9.1s | 60s |
+| 1 | 3 | 206s | 24s | 108s | 32s | 11s | 25.3s | 7.2s | 63s |
+| 2 | 1 | 210s | 21s | 112s | 36s | 13s | 25.7s | 9.0s | 64s |
+| 2 | 2 | 238s | 23s | 135s | 39s | 18s | 27.6s | 11.1s | 62s |
+| 2 | 3 | 214s | 24s | 118s | 32s | 11s | 16.1s | 7.0s | 61s |
+| 3 | 1 | 236s | 20s | 139s | 38s | 17s | 24.3s | 7.0s | 60s |
+| 3 | 2 | 216s | 22s | 115s | 33s | 18s | 23.8s | 15.1s | 61s |
+| 3 | 3 | 225s | 23s | 123s | 35s | 18s | 23.7s | 7.0s | 61s |
+| 4 | 1 | 218s | 20s | 118s | 37s | 10s | 25.4s | 9.0s | 70s |
+| 4 | 2 | 237s | 23s | 130s | 36s | 19s | 26.4s | 8.1s | 65s |
+| 4 | 3 | 239s | 25s | 136s | 37s | 19s | 23.8s | 15.1s | 59s |
+| 5 | 1 | 347s† | 21s | 129s | 35s | 18s | — | 8.0s | 179s |
+| 5 | 2 | 240s | 22s | 135s | 46s | 11s | 25.7s | 9.0s | 72s |
+| 5 | 3 | 244s | 24s | 139s | 48s | 17s | 19.7s | 11.0s | 64s |
+
+† R5-Z1: KTR 179s — registry anomaly. systemd-analyze also failed to collect. All 15 samples included in statistics.
+
+### Statistics (n=15)
+
+| Metric | Mean | Stdev | Min | Max |
+|---|---|---|---|---|
+| **Total** | **233s** | 34s | 206s | 347s |
+| VM Provisioning | 22s | 2s | 20s | 25s |
+| Boot 1 | 125s | 11s | 108s | 139s |
+| Rebase (total) | 37s | 5s | 32s | 48s |
+| Reboot | 15s | 3s | 10s | 19s |
+| systemd-analyze | 23s | 4s | 16s | 28s |
+| chrony-wait | 10s | 3s | 7s | 15s |
+| KTR | 71s | 30s | 58s | 179s |
+
+Excluding the R5-Z1 registry outlier (n=14): total mean **225s**, KTR mean **63s**, stdev **4s**.
+
+### Rebase Structure — Ostree Chunks and Custom Layers
+
+7 z-streams of drift produced identical chunk behavior to the 4.18.x study:
+
+| | 4.19.23 exact match (cluster 4.19.22) | 4.19.23 boot → cluster 4.19.30 |
+|---|---|---|
+| RHCOS chunks present | 51/51 | 16/51 |
+| RHCOS chunks needed | 0 | 35 (520.4 MB) |
+| Custom layers needed | 2 (219.6 MB) | 2 (187.4 MB) |
+| Total fetch | 220 MB | 708 MB |
+| Rebase total (mean) | 36s | 37s |
+
+Both figures were perfectly consistent across all 15 runs — deterministic, no per-run variation in chunk counts or sizes.
+
+Two observations worth noting:
+- **RHCOS chunk drift mirrors 4.18.x**: 16/51 chunks retained after 7 z-streams — the same ~30% retention seen at similar drift distances in the 4.18.x study. The mechanism is unchanged.
+- **Custom layer content changed**: The 4.19.30 custom layers are 187.4 MB vs 219.6 MB for 4.19.23. The custom layers reflect the OCP version of the cluster (4.19.30), not the boot image (4.19.23) — they are always fetched fresh from the registry at the target OCP version.
+
+### Notes
+
+- **Total 225s (ex-outlier) vs 216s exact-match**: 7 z-streams of RHCOS drift added ~9s to scale-up time, despite fetching an additional 488 MB of ostree chunks (708 vs 220 MB total fetch). The chunk fetch is fast relative to other phases.
+- **Drift impact is small in 4.19+**: Even with 35 RHCOS chunks missing (~500 MB), the time penalty is modest because rebase_total is nearly unchanged (37s vs 36s). The chunk fetch and custom layer fetch happen in parallel or in a pipeline that keeps throughput high.
+- **Boot 1 slightly longer**: 125s vs 114s for exact-match — the 11s increase is the net cost of the 488 MB extra fetch at this registry throughput.
+- **KTR unchanged**: 63s (ex-outlier) vs 69s for exact-match — within noise. Container image pulls are unaffected by boot image staleness.
 
 ## OCP 4.19.23 — 4.19+ Layered Image Architecture (Cluster 4.19.22)
 
@@ -779,7 +849,8 @@ The study reveals three distinct regimes, plus two special-case data points:
 - **4.18.0**: 7/51 present → 44 needed (1.2 GB). z-stream drift within 4.18 already costs 74% of chunks.
 - **4.17.35**: 7/51 present. Crossing a minor version boundary adds no additional chunk loss.
 - **4.16.41 and older**: 0/51 present. Total cache miss — every chunk fetched. Fetch volume plateaus at 1.2 GB.
-- **4.19.23**: 51/51 RHCOS base chunks present (0 MB ostree fetch) + 2 custom OCP layers (219.6 MB, always fetched).
+- **4.19.23 exact match** (cluster 4.19.22): 51/51 RHCOS chunks present (0 MB ostree fetch) + 2 custom OCP layers (219.6 MB, always fetched).
+- **4.19.23 boot → cluster 4.19.30** (7 z-stream drift): 16/51 RHCOS chunks present → 35 needed (520 MB) + 2 custom layers (187.4 MB) = 708 MB total. Same ~30% chunk retention rate as equivalent drift in 4.18.x.
 
 **Key finding**: Chunk sharing drops to zero within 2 minor versions in either direction. After that, ostree fetch volume is constant regardless of boot image age. Eliminating fetch volume entirely (exact-match boot image, 0 MB) saves only ~16s vs the native boot image — confirming ostree rebase is NOT a significant bottleneck. The 3-boot path is the only meaningful penalty. Forward drift also causes chunk divergence at a similar rate to backward drift.
 
@@ -793,7 +864,7 @@ OCP 4.19 restructured the node image into two separate components:
 
 During firstboot, the rebase fetches: (a) any RHCOS base ostree chunks in the node image that differ from the boot AMI, plus (b) the OCP custom layers, which are **always fetched** since they don't exist on the boot image at all. The 4.19.23 test was exact-match — the boot AMI and node image RHCOS base were identical — so only the custom layers (219.6 MB) were fetched. As the cluster takes z-stream updates but the boot AMI stays static, RHCOS base chunk drift accumulates just as in 4.18.x, and the custom layers (220 MB) become a fixed overhead on top.
 
-**Net impact**: Total scale-up time (216s) is essentially unchanged vs the 4.18.x native baseline (213s). Boot image staleness continues to apply in 4.19+ — it just starts from a higher floor (220 MB minimum fetch even with a perfectly fresh boot image, vs 0 MB in the exact-match 4.18.x case).
+**Net impact**: Total scale-up time is 216s (exact-match) and ~225s (7 z-streams of drift) — both comparable to the 4.18.x native baseline (213s). Boot image staleness continues to apply in 4.19+: RHCOS base chunk drift accumulates at the same rate as 4.18.x, and the custom layers (220 MB at exact-match, ~187 MB at 7 z-streams) are always fetched on top. The minimum rebase cost in 4.19+ is ~220 MB (custom layers alone, with a fresh boot image), vs 0 MB for exact-match in 4.18.x — but the time penalty is comparable because the chunk fetch phase in 4.19+ is efficient.
 
 ### The 3-Boot Penalty
 
@@ -819,4 +890,4 @@ The same 18 images (or 20 for baseline/4.10) totaling 10.2–12.1 GB are pulled 
 4. **Ostree chunk sharing plateaus quickly**: After 2 minor versions, all chunks are fetched regardless. The ~800 MB of extra fetch (437 MB → 1.2 GB) takes only ~10-15s additional rebase time.
 5. **The dominant bottleneck is container image pulls (~60-70s)**, not ostree rebase (~13-50s). Pre-pulling NodeReady images would benefit all versions equally and would have a larger impact than any boot image optimization.
 6. **MCD firstboot image pull is a hidden fixed cost (~35s in 4.18, ~19s in 4.19)**: The 4.18.27 Boot 1 journal shows ~35s spent pulling the 937 MB MCD image (`machine-config-operator`) before rpm-ostree even starts. The image is currently plain gzip with no partial-pull capability. If ART rebuilt it with zstd:chunked and MCO enabled `enable_partial_images = "true"` in `/etc/containers/storage.conf`, podman could fetch only the files needed to start the container (the `machine-config-daemon` binary and its dependencies, a small fraction of 937 MB) and skip the rest. Estimated savings: 15–25s off Boot 1 in 4.18.x; 4.19 appears to have reduced this cost already (~19s mean).
-7. **In 4.19+, the custom layers (220 MB) are a new fixed floor on rebase cost**: Even with a perfectly fresh boot image (exact-match, 0 ostree chunks), 220 MB of OCP custom layers are always fetched. As the boot image ages and the node image RHCOS base drifts, ostree chunk fetch accumulates on top of that floor — the same staleness penalty as 4.18.x, just starting higher. The boot image remains rarely updated, so this drift will occur.
+7. **In 4.19+, the custom layers (~187–220 MB) are a new fixed floor on rebase cost**: Even with a perfectly fresh boot image (exact-match, 0 ostree chunks), ~220 MB of OCP custom layers are always fetched. As the boot image ages and the node image RHCOS base drifts, ostree chunk fetch accumulates on top — the same staleness mechanism as 4.18.x, just with a higher floor. Measured: 7 z-streams of drift (4.19.23 → 4.19.30) added only ~9s total despite fetching an additional 488 MB, confirming that chunk fetch throughput is high and the time impact of drift remains modest.
