@@ -10,28 +10,37 @@ spec:
       version: 3.4.0
     storage:
       files:
-        - path: /usr/local/bin/chrony-drift-check.sh
+        - path: /usr/local/bin/chrony-ntp-synced-check.sh
           mode: 0755
           contents:
-            source: data:text/plain;charset=utf-8;base64,IyEvYmluL2Jhc2gKIyBDaGVjayBpZiB0aGUgY2hyb255IGRyaWZ0IGZpbGUgd2FzIG1vZGlmaWVkIGxlc3MgdGhhbiA2MCBtaW51dGVzIGFnby4KIyBJZiBzbywgdG91Y2ggYSBmbGFnIGZpbGUgdGhhdCBjaHJvbnktd2FpdC5zZXJ2aWNlIGNhbiBjaGVjayB2aWEKIyBDb25kaXRpb25QYXRoRXhpc3RzIHRvIHNraXAgYmxvY2tpbmcgb24gTlRQIHN5bmMuCkRSSUZUPS92YXIvbGliL2Nocm9ueS9kcmlmdApGTEFHPS9ydW4vY2hyb255LXJlY2VudGx5LXN5bmNlZAppZiBbIC1mICIkRFJJRlQiIF07IHRoZW4KICAgIEFHRT0kKCggJChkYXRlICslcykgLSAkKHN0YXQgLWMgJVkgIiREUklGVCIpICkpCiAgICBpZiBbICIkQUdFIiAtbHQgMzYwMCBdOyB0aGVuCiAgICAgICAgdG91Y2ggIiRGTEFHIgogICAgICAgIGV4aXQgMAogICAgZmkKZmkK
+            source: "data:text/plain;charset=utf-8;base64,IyEvYmluL2Jhc2gKU1RBTVA9L3Zhci9saWIvbnRwLXN5bmNlZApGTEFHPS9ydW4vY2hyb255LXJlY2VudGx5LXN5bmNlZAppZiBbIC1mICIkU1RBTVAiIF07IHRoZW4KICAgIEFHRT0kKCggJChkYXRlICslcykgLSAkKHN0YXQgLWMgJVkgIiRTVEFNUCIpICkpCiAgICBpZiBbICIkQUdFIiAtbHQgMzYwMCBdOyB0aGVuCiAgICAgICAgdG91Y2ggIiRGTEFHIgogICAgZmkKZmkK"
     systemd:
       units:
-        - name: chrony-drift-check.service
-          enabled: true
-          contents: |
-            [Unit]
-            Description=Check if chrony drift file is recent
-            After=chronyd.service
-            Before=chrony-wait.service
-            [Service]
-            Type=oneshot
-            ExecStart=/usr/local/bin/chrony-drift-check.sh
-            RemainAfterExit=yes
-            [Install]
-            WantedBy=multi-user.target
         - name: chrony-wait.service
           dropins:
-            - name: 10-skip-if-recently-synced.conf
+            - name: 10-stamp-on-sync.conf
+              contents: |
+                [Unit]
+                After=coreos-platform-chrony-config.service
+                [Service]
+                ReadWritePaths=/var/lib
+                ExecStartPost=/usr/bin/touch /var/lib/ntp-synced
+            - name: 20-skip-if-recently-synced.conf
               contents: |
                 [Unit]
                 ConditionPathExists=!/run/chrony-recently-synced
+        - name: chrony-ntp-synced-check.service
+          enabled: true
+          contents: |
+            [Unit]
+            Description=Skip chrony-wait if NTP was recently synchronized
+            Wants=chrony-wait.service
+            Before=chrony-wait.service
+
+            [Service]
+            Type=oneshot
+            RemainAfterExit=yes
+            ExecStart=/usr/local/bin/chrony-ntp-synced-check.sh
+
+            [Install]
+            WantedBy=multi-user.target
