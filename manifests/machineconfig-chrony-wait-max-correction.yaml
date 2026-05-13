@@ -1,0 +1,24 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+  name: 99-worker-chrony-wait-max-correction
+spec:
+  config:
+    ignition:
+      version: 3.4.0
+    systemd:
+      units:
+        - name: chrony-wait.service
+          dropins:
+            - name: increase-max-correction-tolerance.conf
+              contents: |
+                # Override the default max-correction in chrony-wait.service of 10 milliseconds
+                # to a max-correction of 1 second. We know we need some guarantee of time
+                # correctness but we want to reduce node bringup time and increasing our
+                # tolerance here should allow that.
+                # Related to https://redhat.atlassian.net/browse/OCPBUGS-84814
+                [Service]
+                ExecStart=
+                ExecStart=/usr/bin/chronyc -h 127.0.0.1,::1 waitsync 0 1 0.0 1
