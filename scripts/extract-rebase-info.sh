@@ -14,7 +14,7 @@ SUFFIX="${1:?Usage: $0 <suffix>}"
 JOURNAL="${DATA_DIR}/node-journal-${SUFFIX}.log"
 OUTFILE="${DATA_DIR}/rebase-info-${SUFFIX}.json"
 
-BOOT_VERSION=$(echo "$SUFFIX" | sed 's/-m6i-r[0-9]*-z[0-9]*//')
+BOOT_VERSION="$SUFFIX"
 
 if [ ! -f "$JOURNAL" ]; then
   echo '{"suffix":"'"${SUFFIX}"'","boot_version":"'"${BOOT_VERSION}"'","error":"Journal not found"}' > "$OUTFILE"

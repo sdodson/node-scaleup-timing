@@ -3,10 +3,14 @@
 #
 # Usage: scripts/collect-artifacts.sh <node_name> <machine_name> <suffix>
 #   e.g.: scripts/collect-artifacts.sh ip-10-0-29-15.us-east-2.compute.internal sdodson-xxx-4.14.38-m6i-r3-z2 4.14.38-m6i-r3-z2
+#
+# Requires: STUDY_NAME, KUBECONFIG set in environment.
+# Uses MACHINE_NS from environment or auto-detects.
 
 set -euo pipefail
 source "$(dirname "$0")/config.env"
 check_kubeconfig
+detect_machine_namespace
 
 NODE="${1:?Usage: $0 <node_name> <machine_name> <suffix>}"
 MACHINE="${2:?Usage: $0 <node_name> <machine_name> <suffix>}"
@@ -54,11 +58,18 @@ collect "systemd-analyze critical-chain" \
 # Machine and Node YAML
 collect "Machine YAML" \
   "${DATA_DIR}/new-machine-${SUFFIX}-final.yaml" \
-  oc get machine "$MACHINE" -n openshift-machine-api -o yaml
+  oc get machine "$MACHINE" -n "$MACHINE_NS" -o yaml
 
 collect "Node YAML" \
   "${DATA_DIR}/new-node-${SUFFIX}.yaml" \
   oc get node "$NODE" -o yaml
+
+# CAPI: also collect AWSMachine object
+if [ "$MACHINE_NS" = "openshift-cluster-api" ]; then
+  collect "AWSMachine YAML" \
+    "${DATA_DIR}/new-awsmachine-${SUFFIX}.yaml" \
+    oc get awsmachine "$MACHINE" -n "$MACHINE_NS" -o yaml
+fi
 
 # Container images (text format)
 collect "crictl images" \

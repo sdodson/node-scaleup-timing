@@ -19,10 +19,9 @@ BLAME_FILE="${DATA_DIR}/node-systemd-blame-${SUFFIX}.txt"
 BOOT_LIST="${DATA_DIR}/node-boot-list-${SUFFIX}.txt"
 OUTFILE="${DATA_DIR}/timings-${SUFFIX}.json"
 
-# Parse suffix into components: boot_version, round, zone
-BOOT_VERSION=$(echo "$SUFFIX" | sed 's/-m6i-r[0-9]*-z[0-9]*//')
-ROUND=$(echo "$SUFFIX" | grep -oP 'r\K[0-9]+')
-ZONE=$(echo "$SUFFIX" | grep -oP 'z\K[0-9]+')
+# Parse round number from suffix (e.g. "5.0-m6a-baseline-r2-2b" -> "2", "4.14.38-m6i-r3-z2" -> "3")
+ROUND=$(echo "$SUFFIX" | grep -oP '(?<=-r)\d+(?=-|$)' | head -1)
+ROUND="${ROUND:-0}"
 
 # Convert journal timestamp "Mon DD HH:MM:SS" to epoch seconds (UTC).
 # Requires YEAR to be set (derived from Machine YAML creation timestamp).
@@ -40,9 +39,7 @@ emit_null() {
   cat > "$OUTFILE" <<EOF
 {
   "suffix": "${SUFFIX}",
-  "boot_version": "${BOOT_VERSION}",
   "round": ${ROUND},
-  "zone": ${ZONE},
   "error": "$1"
 }
 EOF
@@ -223,9 +220,7 @@ node_ready = safe_int('${NODE_READY_EPOCH}')
 
 result = {
     'suffix': '${SUFFIX}',
-    'boot_version': '${BOOT_VERSION}',
     'round': ${ROUND},
-    'zone': ${ZONE},
     'machineset_created': '${CREATED_ISO}',
     'node_ready_time': '${NODE_READY_ISO}' or None,
     'vm_provisioning_s': delta(created, boot1),

@@ -1,109 +1,115 @@
 #!/bin/bash
-# Run one round of the boot image age study: create 3 MachineSets (one per zone),
-# wait for all to become Ready, collect artifacts, run extraction, delete MachineSets.
+# Run one round of a scale-up study.
+# Discovers test MachineSets, scales them up, waits for Ready,
+# collects all artifacts, then scales back down.
 #
-# Usage: scripts/run-round.sh <boot_version> <round>
-#   e.g.: scripts/run-round.sh 4.14.38 3
+# Usage: STUDY_NAME=<name> KUBECONFIG=<path> scripts/run-round.sh <round> <study_suffix>
+#   e.g.: STUDY_NAME=cni-baseline KUBECONFIG=kubeconfigs/aws-5.0 scripts/run-round.sh 2 5.0-m6a-baseline
 
 set -euo pipefail
 source "$(dirname "$0")/config.env"
 check_kubeconfig
+detect_machine_namespace
+discover_test_machinesets
 
-BOOT_VERSION="${1:?Usage: $0 <boot_version> <round>}"
-ROUND="${2:?Usage: $0 <boot_version> <round>}"
+ROUND="${1:?Usage: $0 <round> <study_suffix>}"
+STUDY_SUFFIX="${2:?Usage: $0 <round> <study_suffix>}"
 SCRIPT_DIR="$(dirname "$0")"
 
+mkdir -p "$DATA_DIR"
+
 echo "=========================================="
-echo "ROUND ${ROUND} | Boot image: ${BOOT_VERSION}"
+echo "Round ${ROUND} | ${STUDY_SUFFIX}"
+echo "Study: ${STUDY_NAME} | Namespace: ${MACHINE_NS}"
+echo "MachineSets: ${TEST_MACHINESETS[*]}"
 echo "Started: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo "=========================================="
 
-# Get cluster prefix for MachineSet naming
-BASE_MS=$(oc get machinesets -n openshift-machine-api -o name \
-  | sed 's|machineset.machine.openshift.io/||' \
-  | grep "worker" | head -1)
-CLUSTER_PREFIX=$(echo "$BASE_MS" | sed "s/-worker-.*//")
-
-# Phase 1: Create MachineSets for all 3 zones
-echo "Creating MachineSets..."
-for ZONE in "${ZONE_LETTERS[@]}"; do
-  "${SCRIPT_DIR}/create-machineset.sh" "$BOOT_VERSION" "$ROUND" "$ZONE"
+# Safety check: verify all test MachineSets are at 0 replicas
+for MS in "${TEST_MACHINESETS[@]}"; do
+  REPLICAS=$(oc get machineset "$MS" -n "$MACHINE_NS" \
+    -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "?")
+  if [ "$REPLICAS" != "0" ]; then
+    echo "ERROR: ${MS} has replicas=${REPLICAS}, expected 0. Scale down first." >&2
+    exit 1
+  fi
 done
 
-CREATE_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-echo "All MachineSets created at ${CREATE_TIME}"
+# Scale up all test MachineSets
+echo "Scaling up ${#TEST_MACHINESETS[@]} MachineSets..."
+SCALE_START=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+for MS in "${TEST_MACHINESETS[@]}"; do
+  oc scale machineset "$MS" -n "$MACHINE_NS" --replicas=1
+done
+echo "Scale commands issued at $(date -u +%H:%M:%S) UTC"
 
-# Phase 2: Wait for all 3 nodes to reach Ready
-echo "Waiting for nodes to become Ready..."
+# Wait for each to be Ready
 declare -A NODES MACHINES
 FAILED_ZONES=()
 
-for ZONE in "${ZONE_LETTERS[@]}"; do
-  SUFFIX=$(make_suffix "$BOOT_VERSION" "$ROUND" "$ZONE")
-  MS_NAME="${CLUSTER_PREFIX}-${SUFFIX}"
+for MS in "${TEST_MACHINESETS[@]}"; do
+  ZONE_ID=$(ms_to_zone_id "$MS")
+  echo "Waiting for ${MS} (zone ${ZONE_ID})..."
 
-  NODE=$("${SCRIPT_DIR}/wait-for-ready.sh" "$MS_NAME" 2>&1 | tee /dev/stderr | tail -1) || true
+  NODE=$("${SCRIPT_DIR}/wait-for-ready.sh" "$MS" 2>&1 | tee /dev/stderr | tail -1) || true
 
   if [ -n "$NODE" ] && [[ "$NODE" != TIMEOUT* ]] && [[ "$NODE" != FAILED* ]]; then
-    NODES[$ZONE]="$NODE"
-    MACHINES[$ZONE]=$(oc get machines -n openshift-machine-api \
-      -l "machine.openshift.io/cluster-api-machineset=${MS_NAME}" \
+    NODES[$ZONE_ID]="$NODE"
+    MACHINES[$ZONE_ID]=$(oc get machines -n "$MACHINE_NS" \
+      -l "machine.openshift.io/cluster-api-machineset=${MS}" \
       -o jsonpath='{.items[0].metadata.name}')
   else
-    echo "  WARN: Zone ${ZONE} failed to reach Ready" >&2
-    FAILED_ZONES+=("$ZONE")
+    echo "  WARN: ${MS} (zone ${ZONE_ID}) failed to reach Ready" >&2
+    FAILED_ZONES+=("$ZONE_ID")
   fi
 done
 
-READY_COUNT=$(( ${#ZONE_LETTERS[@]} - ${#FAILED_ZONES[@]} ))
-echo "Nodes Ready: ${READY_COUNT}/${#ZONE_LETTERS[@]}"
+READY_COUNT=${#NODES[@]}
+TOTAL_COUNT=${#TEST_MACHINESETS[@]}
+echo "Nodes Ready: ${READY_COUNT}/${TOTAL_COUNT}"
 
-# Phase 3: Collect artifacts from all ready nodes
+if [ "$READY_COUNT" -eq 0 ]; then
+  echo "ERROR: No nodes reached Ready. Scaling down and exiting." >&2
+  for MS in "${TEST_MACHINESETS[@]}"; do
+    oc scale machineset "$MS" -n "$MACHINE_NS" --replicas=0 2>/dev/null || true
+  done
+  exit 1
+fi
+
+# Collect artifacts from all ready nodes
 echo "Collecting artifacts..."
-for ZONE in "${ZONE_LETTERS[@]}"; do
-  if [[ -v "NODES[$ZONE]" ]]; then
-    SUFFIX=$(make_suffix "$BOOT_VERSION" "$ROUND" "$ZONE")
-    echo "  Zone ${ZONE}: ${NODES[$ZONE]}"
-    "${SCRIPT_DIR}/collect-artifacts.sh" "${NODES[$ZONE]}" "${MACHINES[$ZONE]}" "$SUFFIX"
-  fi
+for ZONE_ID in $(echo "${!NODES[@]}" | tr ' ' '\n' | sort); do
+  SUFFIX="${STUDY_SUFFIX}-r${ROUND}-${ZONE_ID}"
+  echo "--- Zone ${ZONE_ID}: ${NODES[$ZONE_ID]} (suffix: ${SUFFIX}) ---"
+  "${SCRIPT_DIR}/collect-artifacts.sh" "${NODES[$ZONE_ID]}" "${MACHINES[$ZONE_ID]}" "$SUFFIX"
 done
 
-# CSR list (per-round, shared across zones)
-oc get csr > "${DATA_DIR}/csr-list-${BOOT_VERSION}-m6i-r${ROUND}.txt" 2>/dev/null || true
+# CSR list (once per round, using first zone's suffix)
+FIRST_ZONE=$(echo "${!NODES[@]}" | tr ' ' '\n' | sort | head -1)
+oc get csr > "${DATA_DIR}/csr-list-${STUDY_SUFFIX}-r${ROUND}.txt" 2>/dev/null || true
 
-# Phase 4: Run extraction scripts
-echo "Extracting data..."
-for ZONE in "${ZONE_LETTERS[@]}"; do
-  if [[ -v "NODES[$ZONE]" ]]; then
-    SUFFIX=$(make_suffix "$BOOT_VERSION" "$ROUND" "$ZONE")
-    "${SCRIPT_DIR}/extract-timings.sh" "$SUFFIX"
-    "${SCRIPT_DIR}/extract-rebase-info.sh" "$SUFFIX"
-    "${SCRIPT_DIR}/extract-nodeready-images.sh" "$SUFFIX"
-  fi
+# Scale down all test MachineSets
+echo "Scaling down..."
+for MS in "${TEST_MACHINESETS[@]}"; do
+  oc scale machineset "$MS" -n "$MACHINE_NS" --replicas=0
 done
+echo "Scale-down commanded at $(date -u +%H:%M:%S) UTC"
 
-# Phase 5: Delete MachineSets
-echo "Deleting MachineSets..."
-for ZONE in "${ZONE_LETTERS[@]}"; do
-  SUFFIX=$(make_suffix "$BOOT_VERSION" "$ROUND" "$ZONE")
-  MS_NAME="${CLUSTER_PREFIX}-${SUFFIX}"
-  oc delete machineset "$MS_NAME" -n openshift-machine-api --wait=false 2>/dev/null &
-done
-wait
-
-# Wait for machines to be fully deleted before returning
+# Wait for machine cleanup
 echo "Waiting for machine cleanup..."
-for i in $(seq 1 30); do
-  REMAINING=$(oc get machines -n openshift-machine-api -o name 2>/dev/null \
-    | grep -c "${BOOT_VERSION}.*r${ROUND}" || true)
-  if [ "${REMAINING:-0}" -eq 0 ]; then
+for i in $(seq 1 60); do
+  if ! oc get machines -n "$MACHINE_NS" --no-headers 2>/dev/null \
+    | grep -q "$MACHINESET_PATTERN"; then
+    echo "Machines deleted."
     break
   fi
   sleep 10
 done
 
+echo ""
 echo "Round ${ROUND} complete at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo "  Ready: ${READY_COUNT}/${TOTAL_COUNT}"
 if [ ${#FAILED_ZONES[@]} -gt 0 ]; then
   echo "  Failed zones: ${FAILED_ZONES[*]}"
 fi
-echo ""
+echo "Artifacts in: ${DATA_DIR}"

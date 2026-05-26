@@ -18,7 +18,7 @@ IMAGES_TXT="${DATA_DIR}/node-images-${SUFFIX}.txt"
 BOOT_LIST="${DATA_DIR}/node-boot-list-${SUFFIX}.txt"
 OUTFILE="${DATA_DIR}/nodeready-images-${SUFFIX}.json"
 
-BOOT_VERSION=$(echo "$SUFFIX" | sed 's/-m6i-r[0-9]*-z[0-9]*//')
+BOOT_VERSION="$SUFFIX"
 
 if [ ! -f "$JOURNAL" ]; then
   echo '{"suffix":"'"${SUFFIX}"'","boot_version":"'"${BOOT_VERSION}"'","error":"Journal not found"}' > "$OUTFILE"
@@ -55,6 +55,7 @@ year = '${YEAR}'
 
 # Parse CRI-O pull events from journal (Boot 2 only)
 pulls = {}  # digest -> {pull_start, pull_end}
+request_ids = {}  # request_id -> digest (maps Pulled back to Pulling)
 
 def parse_journal_ts(ts_str):
     try:
@@ -101,37 +102,46 @@ with open(journal_path) as f:
         if 'crio' not in line:
             continue
 
-        # Parse CRI-O Pulling/Pulled events
-        # Format: time=\"2026-05-01T16:19:28.380Z\" level=info msg=\"Pull(ing|ed) image: PULLSPEC\"
-        pull_match = re.search(r'time=\"([^\"]+)\".*msg=\"(Pulling|Pulled) image: (\S+)\"', line)
-        if not pull_match:
-            continue
-
-        iso_ts = pull_match.group(1)
-        action = pull_match.group(2)
-        pullspec = pull_match.group(3)
-
-        # Extract digest from pullspec
-        digest = ''
-        if '@sha256:' in pullspec:
-            digest = 'sha256:' + pullspec.split('@sha256:')[1]
-        else:
-            digest = pullspec
-
-        if digest not in pulls:
-            pulls[digest] = {'pullspec': pullspec, 'pull_start': None, 'pull_end': None}
-
-        try:
-            ts = datetime.fromisoformat(iso_ts.rstrip('Z'))
-        except:
-            continue
-
-        if action == 'Pulling':
+        # Parse CRI-O Pulling/Pulled events, matched by request ID.
+        # Pulling format: msg="Pulling image: PULLSPEC" id=REQUEST_ID
+        # Pulled format:  msg="Pulled image: CONTAINER_ID" id=REQUEST_ID
+        pull_match = re.search(r'time=\"([^\"]+)\".*msg=\"Pulling image: (\S+)\".*id=([a-f0-9-]+)', line)
+        if pull_match:
+            iso_ts = pull_match.group(1)
+            pullspec = pull_match.group(2)
+            req_id = pull_match.group(3)
+            digest = ''
+            sha_match = re.search(r'@sha256:([a-f0-9]+)', pullspec)
+            if sha_match:
+                digest = 'sha256:' + sha_match.group(1)
+            else:
+                digest = pullspec
+            try:
+                ts = datetime.fromisoformat(iso_ts.rstrip('Z'))
+            except:
+                continue
+            if req_id not in request_ids:
+                request_ids[req_id] = digest
+            if digest not in pulls:
+                pulls[digest] = {'pullspec': pullspec, 'pull_start': None, 'pull_end': None}
             if pulls[digest]['pull_start'] is None or ts < pulls[digest]['pull_start']:
                 pulls[digest]['pull_start'] = ts
-        elif action == 'Pulled':
-            if pulls[digest]['pull_end'] is None or ts > pulls[digest]['pull_end']:
-                pulls[digest]['pull_end'] = ts
+            continue
+
+        pulled_match = re.search(r'time=\"([^\"]+)\".*msg=\"Pulled image: \S+\".*id=([a-f0-9-]+)', line)
+        if pulled_match:
+            iso_ts = pulled_match.group(1)
+            req_id = pulled_match.group(2)
+            digest = request_ids.get(req_id)
+            if not digest:
+                continue
+            try:
+                ts = datetime.fromisoformat(iso_ts.rstrip('Z'))
+            except:
+                continue
+            if digest in pulls:
+                if pulls[digest]['pull_end'] is None or ts > pulls[digest]['pull_end']:
+                    pulls[digest]['pull_end'] = ts
 
 # Parse image sizes from crictl images JSON
 image_sizes = {}  # digest -> size_bytes
