@@ -25,6 +25,11 @@ diagrams/          — SVG diagrams referenced by reports — committed to git
    scripts/run-study.sh 5 my-study-suffix          # 5 rounds
    scripts/run-round.sh 1 my-study-suffix           # or a single round
    ```
+   **Always capture a baseline first, then run experiment rounds on the same cluster.**
+   Never compare experiment results against a baseline from a different cluster or study run.
+   Unless explicitly told otherwise: run baseline rounds first (no changes applied), then apply
+   the change under test and run the experiment rounds. Use the same `STUDY_NAME` for both so
+   all data lives together and comparisons are apples-to-apples.
 4. **Produce analysis** — a markdown/HTML report in `reports/` breaking down each boot phase.
    Use **p90** (90th percentile) instead of averages for summary statistics. p90 better
    represents the tail latency a user is likely to experience. Run **5 rounds** (n=10

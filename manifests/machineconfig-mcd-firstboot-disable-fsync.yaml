@@ -1,0 +1,19 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+  name: 99-worker-mcd-firstboot-disable-fsync
+spec:
+  config:
+    ignition:
+      version: 3.4.0
+    systemd:
+      units:
+        - name: machine-config-daemon-firstboot.service
+          dropins:
+            - name: disable-fsync.conf
+              contents: |
+                [Service]
+                ExecStartPre=ostree config --repo=/sysroot/ostree/repo set core.fsync false
+                ExecStopPost=ostree config --repo=/sysroot/ostree/repo set core.fsync true
